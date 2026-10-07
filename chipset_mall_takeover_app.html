@@ -2,22 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CHiPSET — NIGHT HUNT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CHiPSET // NIGHT HUNT</title>
+  
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Modern Font Imports -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --bg-dark: #08080A;
-      --card-bg: #111115;
-      --card-border: #22222A;
-      --chipset-orange: #FF9900;
-      --chipset-orange-glow: rgba(255, 153, 0, 0.35);
-      --scary-red: #E63946;
-      --scary-red-glow: rgba(230, 57, 70, 0.4);
-      --text-main: #EEEEEE;
-      --text-muted: #888899;
-      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --bg-void: #050508;
+      --card-glass: rgba(18, 18, 26, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-orange: #FF9F1C;
+      --accent-orange-glow: rgba(255, 159, 28, 0.25);
+      --accent-red: #FF2E55;
+      --accent-red-glow: rgba(255, 46, 85, 0.3);
+      --accent-green: #00F5D4;
+      --accent-green-glow: rgba(0, 245, 212, 0.25);
+      --text-main: #F4F4F8;
+      --text-muted: #6E6E82;
+      --font-display: 'Orbitron', sans-serif;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
     }
 
     * {
@@ -25,78 +35,128 @@
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background-color: var(--bg-dark);
+      background-color: var(--bg-void);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 159, 28, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(255, 46, 85, 0.05) 0%, transparent 50%);
+      background-attachment: fixed;
       color: var(--text-main);
-      font-family: var(--font-stack);
-      padding: 16px;
-      padding-bottom: 100px;
+      font-family: var(--font-sans);
       min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 110px;
     }
 
-    /* Creepy Scanline Overlay */
+    /* Ambient CRT Scanline Overlay */
     body::before {
-      content: " ";
+      content: "";
       position: fixed;
-      top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
       background-size: 100% 4px;
       z-index: 999;
       pointer-events: none;
-      opacity: 0.6;
+      opacity: 0.4;
     }
 
     .container {
-      max-width: 500px;
+      max-width: 460px;
       margin: 0 auto;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-      padding: 16px;
-      background: var(--card-bg);
-      border: 1px solid var(--chipset-orange);
-      border-radius: 12px;
-      box-shadow: 0 0 15px var(--chipset-orange-glow);
-    }
-
-    .brand {
-      font-size: 1.6rem;
-      font-weight: 900;
-      letter-spacing: 3px;
-      color: var(--chipset-orange);
-      text-transform: uppercase;
-      text-shadow: 0 0 8px var(--chipset-orange);
-    }
-
-    .sub-brand {
-      font-size: 0.85rem;
-      color: var(--scary-red);
-      letter-spacing: 2px;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-
-    .card {
-      background: var(--card-bg);
+    /* HEADER HUD */
+    .nav-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--card-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 16px;
       margin-bottom: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span {
+      color: var(--accent-orange);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* GLASS CARDS */
+    .card {
+      background: var(--card-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--accent-orange);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* FORMS & INPUTS */
     .form-group {
       margin-bottom: 16px;
     }
 
     label {
       display: block;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: var(--chipset-orange);
+      color: var(--text-muted);
       letter-spacing: 1px;
       margin-bottom: 8px;
       text-transform: uppercase;
@@ -104,28 +164,33 @@
 
     input, select {
       width: 100%;
-      padding: 16px;
-      background: #000000;
-      border: 2px solid var(--card-border);
-      border-radius: 10px;
+      padding: 16px 18px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
       color: #FFF;
-      font-size: 1.1rem;
+      font-family: var(--font-sans);
+      font-size: 1rem;
       font-weight: 600;
       outline: none;
+      transition: all 0.2s ease;
     }
 
     input:focus, select:focus {
-      border-color: var(--chipset-orange);
-      box-shadow: 0 0 10px var(--chipset-orange-glow);
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 16px var(--accent-orange-glow);
+      background: rgba(0, 0, 0, 0.7);
     }
 
+    /* BUTTONS */
     .btn {
       width: 100%;
-      padding: 18px;
+      padding: 16px;
       border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 900;
+      border-radius: 14px;
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
       cursor: pointer;
@@ -133,126 +198,166 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      transition: transform 0.1s ease, filter 0.2s ease;
-      margin-top: 8px;
+      transition: all 0.2s ease;
+      position: relative;
     }
 
     .btn:active {
-      transform: scale(0.97);
+      transform: scale(0.98);
     }
 
     .btn-orange {
-      background: var(--chipset-orange);
+      background: linear-gradient(135deg, #FF9F1C, #FF7700);
       color: #000;
-      box-shadow: 0 0 15px var(--chipset-orange-glow);
+      box-shadow: 0 4px 20px var(--accent-orange-glow);
     }
 
     .btn-red {
-      background: var(--scary-red);
+      background: linear-gradient(135deg, #FF2E55, #E6002E);
       color: #FFF;
-      box-shadow: 0 0 15px var(--scary-red-glow);
+      box-shadow: 0 4px 20px var(--accent-red-glow);
     }
 
-    .btn-dark {
-      background: #1C1C24;
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.05);
       color: var(--text-main);
       border: 1px solid var(--card-border);
     }
 
-    .hunt-banner {
-      background: #190507;
-      border: 2px solid var(--scary-red);
-      border-radius: 12px;
-      padding: 16px;
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* RADAR & TIMER DISPLAY */
+    .radar-banner {
+      position: relative;
+      background: radial-gradient(circle at center, rgba(255, 46, 85, 0.15) 0%, rgba(10, 10, 15, 0.8) 100%);
+      border: 1px solid var(--accent-red);
+      border-radius: 20px;
+      padding: 20px;
       text-align: center;
       margin-bottom: 16px;
-      box-shadow: 0 0 20px var(--scary-red-glow);
-      animation: pulse 2s infinite;
+      overflow: hidden;
+      box-shadow: 0 0 30px var(--accent-red-glow);
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 10px var(--scary-red-glow); }
-      50% { box-shadow: 0 0 25px var(--scary-red-glow); }
-      100% { box-shadow: 0 0 10px var(--scary-red-glow); }
+    /* Rotating Radar Sweep Graphic */
+    .radar-sweep {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 250px; height: 250px;
+      margin-top: -125px; margin-left: -125px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 46, 85, 0.2);
+      pointer-events: none;
+      animation: spin 4s linear infinite;
+      background: conic-gradient(from 0deg, transparent 0deg, transparent 300deg, rgba(255, 46, 85, 0.3) 360deg);
     }
 
-    .timer-display {
-      font-size: 2.8rem;
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .timer-val {
+      font-family: var(--font-display);
+      font-size: 3rem;
       font-weight: 900;
-      color: var(--chipset-orange);
-      text-shadow: 0 0 12px var(--chipset-orange);
-      font-family: monospace;
-      margin: 10px 0;
+      letter-spacing: 2px;
+      color: var(--accent-orange);
+      text-shadow: 0 0 20px var(--accent-orange-glow);
+      margin: 8px 0;
     }
 
+    /* HUNTER PILLS */
     .hunter-pill {
-      display: inline-block;
-      background: var(--scary-red);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 46, 85, 0.15);
+      border: 1px solid var(--accent-red);
       color: #FFF;
+      font-size: 0.75rem;
       font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      margin: 2px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      margin: 3px;
+      backdrop-filter: blur(4px);
     }
 
+    /* TEAM CARDS */
     .team-card {
-      background: #0D0D11;
+      background: rgba(0, 0, 0, 0.3);
       border: 1px solid var(--card-border);
-      border-radius: 10px;
+      border-radius: 14px;
       padding: 16px;
       margin-bottom: 12px;
+      transition: all 0.2s ease;
     }
 
     .team-card.caught {
-      border-color: var(--scary-red);
-      background: #14080A;
+      border-color: rgba(255, 46, 85, 0.4);
+      background: rgba(255, 46, 85, 0.05);
       opacity: 0.7;
     }
 
-    .team-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--chipset-orange);
+    .team-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
     }
 
-    .member-list {
-      font-size: 0.9rem;
-      color: var(--text-muted);
+    .team-name {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--accent-orange);
+    }
+
+    .member-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
       margin-bottom: 12px;
     }
 
+    .member-pill {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
     .badge-batch {
-      background: #22222A;
-      color: var(--chipset-orange);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-
-    .status-badge {
-      font-size: 0.75rem;
+      color: var(--accent-orange);
+      font-size: 0.65rem;
       font-weight: 800;
-      padding: 4px 8px;
-      border-radius: 6px;
-      text-transform: uppercase;
     }
 
-    .status-hiding { background: #1B382B; color: #4EFEAA; }
-    .status-pending { background: #3B2A0D; color: #FFB703; }
-    .status-caught { background: #3B0D11; color: var(--scary-red); }
+    /* STATUS BADGES */
+    .status-badge {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+    }
 
+    .status-hiding { background: rgba(0, 245, 212, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .status-pending { background: rgba(255, 159, 28, 0.15); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+    .status-caught { background: rgba(255, 46, 85, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+    /* MODAL PANEL */
     .modal {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(5px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -262,21 +367,44 @@
     .modal.active { display: flex; }
 
     .modal-content {
-      background: var(--card-bg);
-      border: 2px solid var(--chipset-orange);
-      border-radius: 16px;
-      padding: 24px;
+      background: #0D0D14;
+      border: 1px solid var(--accent-orange);
+      border-radius: 24px;
+      padding: 26px;
       width: 100%;
-      max-width: 420px;
+      max-width: 400px;
+      box-shadow: 0 0 50px var(--accent-orange-glow);
     }
 
-    .connection-status {
+    /* STATS METRIC DISPLAY */
+    .stats-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      padding: 10px;
+      border-radius: 12px;
       text-align: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-      color: var(--chipset-orange);
+    }
+
+    .stat-val {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #FFF;
+    }
+
+    .stat-lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-top: 2px;
     }
 
     .hidden { display: none !important; }
@@ -285,19 +413,20 @@
 <body>
 
   <div class="container">
-    <header class="header">
-      <div class="brand">CHiPSET</div>
-      <div class="sub-brand">NIGHT HUNT • LIVE ARENA</div>
+    <!-- NAVIGATION HEADER -->
+    <header class="nav-header">
+      <div class="brand-title">CHiPSET <span>HUNT</span></div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="status-dot"></div>
+      </div>
     </header>
 
-    <div id="connectionStatus" class="connection-status">CONNECTING TO LIVE SERVER...</div>
-
-    <!-- STEP 1: USER REGISTRATION -->
+    <!-- STEP 1: REGISTRATION -->
     <section id="stepRegister" class="card">
-      <h2 style="color: var(--chipset-orange); margin-bottom: 16px; font-size: 1.2rem;">ENTER THE HUNT</h2>
+      <div class="card-title">OPERATIVE ENTRY</div>
       <div class="form-group">
-        <label>Your Name</label>
-        <input type="text" id="inputName" placeholder="Enter full name" />
+        <label>Operative Name</label>
+        <input type="text" id="inputName" placeholder="e.g. Piyush" autocomplete="off" />
       </div>
       <div class="form-group">
         <label>CHiPSET Batch</label>
@@ -307,40 +436,63 @@
           <option value="2026-27">Batch 2026-27</option>
         </select>
       </div>
-      <button class="btn btn-orange" onclick="registerUser()">JOIN ARENA</button>
+      <button class="btn btn-orange" onclick="registerUser()">ENTER ARENA</button>
     </section>
 
-    <!-- STEP 2: MAIN LIVE GAME DASHBOARD -->
+    <!-- STEP 2: DASHBOARD -->
     <main id="stepDashboard" class="hidden">
-      <!-- LIVE HUNT STATUS BANNER -->
-      <div id="huntBanner" class="hunt-banner">
-        <div style="font-size: 0.8rem; color: var(--scary-red); font-weight: 800; letter-spacing: 2px;">LIVE HUNTERS</div>
-        <div id="hunterNamesList" style="margin-top: 6px;"></div>
+      
+      <!-- RADAR & HUNTER HUD BANNER -->
+      <div class="radar-banner">
+        <div class="radar-sweep"></div>
+        <div style="font-family: var(--font-display); font-size: 0.7rem; color: var(--accent-red); letter-spacing: 2px; margin-bottom: 8px; font-weight: 800;">
+          HUNTERS ON THE PROWL
+        </div>
+        <div id="hunterNamesList" style="position: relative; z-index: 2;"></div>
       </div>
 
-      <!-- TIMER DISPLAY -->
+      <!-- TACTICAL STATS BAR -->
+      <div id="statsBar" class="stats-bar hidden">
+        <div class="stat-box">
+          <div id="statTotal" class="stat-val">0</div>
+          <div class="stat-lbl">Squads</div>
+        </div>
+        <div class="stat-box">
+          <div id="statActive" class="stat-val" style="color: var(--accent-green);">0</div>
+          <div class="stat-lbl">Hiding</div>
+        </div>
+        <div class="stat-box">
+          <div id="statCaught" class="stat-val" style="color: var(--accent-red);">0</div>
+          <div class="stat-lbl">Eliminated</div>
+        </div>
+      </div>
+
+      <!-- TIMER CARD -->
       <div id="timerCard" class="card hidden" style="text-align: center;">
-        <div id="timerLabel" style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted);">TIME REMAINING</div>
-        <div id="timerDisplay" class="timer-display">00:00</div>
+        <div id="timerLabel" style="font-family: var(--font-display); font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">
+          TIME REMAINING
+        </div>
+        <div id="timerDisplay" class="timer-val">00:00</div>
       </div>
 
-      <!-- TEAMS / PLAYERS DISPLAY -->
+      <!-- ARENA STATUS -->
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 1rem; color: var(--chipset-orange);">ARENA STATUS</h3>
-          <span id="playerCountBadge" style="font-size: 0.8rem; color: var(--text-muted);">0 Joined</span>
+        <div class="card-title">
+          <span>ARENA FEED</span>
+          <span id="playerCountBadge" style="color: var(--text-muted); font-size: 0.7rem;">0 Joined</span>
         </div>
 
-        <div id="lobbyView" style="color: var(--text-muted); font-size: 0.9rem;">
-          <p>Waiting for supervisor to initiate the hunt...</p>
-          <div id="lobbyPlayerList" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+        <div id="lobbyView">
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">Awaiting supervisor authorization to form squads...</p>
+          <div id="lobbyPlayerList" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
         </div>
 
         <div id="activeTeamsList" class="hidden"></div>
       </div>
 
-      <button class="btn btn-dark" onclick="openSupervisorModal()">
-        🔐 SUPERVISOR ACCESS
+      <!-- SUPERVISOR TRIGGER -->
+      <button class="btn btn-glass" onclick="openSupervisorModal()">
+        🔐 SUPERVISOR PANEL
       </button>
     </main>
   </div>
@@ -348,32 +500,32 @@
   <!-- SUPERVISOR MODAL -->
   <div id="supervisorModal" class="modal">
     <div class="modal-content">
-      <h3 style="color: var(--chipset-orange); margin-bottom: 16px;">SUPERVISOR PANEL</h3>
+      <div class="card-title" style="margin-bottom: 20px;">COMMAND OVERRIDE</div>
       
       <div id="passcodeSection">
         <div class="form-group">
-          <label>Enter Passcode</label>
-          <input type="password" id="inputPasscode" placeholder="••••" />
+          <label>Security Passcode</label>
+          <input type="password" id="inputPasscode" placeholder="••••" style="text-align: center; font-size: 1.4rem; letter-spacing: 6px;" />
         </div>
-        <button class="btn btn-orange" onclick="verifyPasscode()">UNLOCK</button>
-        <button class="btn btn-dark" onclick="closeSupervisorModal()" style="margin-top: 8px;">CANCEL</button>
+        <button class="btn btn-orange" onclick="verifyPasscode()">AUTHENTICATE</button>
+        <button class="btn btn-glass" onclick="closeSupervisorModal()" style="margin-top: 8px;">DISMISS</button>
       </div>
 
       <div id="supervisorControls" class="hidden">
-        <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted);">
-          Passcode Verified • Supervisor Access Granted
+        <div style="margin-bottom: 16px; font-size: 0.8rem; color: var(--accent-green); font-weight: 700;">
+          ✓ COMMAND ACCESS GRANTED
         </div>
 
         <button class="btn btn-orange" onclick="startNewGame()" style="margin-bottom: 12px;">
-          ⚡ START GAME (ASSIGN ROLES)
+          ⚡ DEPLOY SQUADS & ASSIGN ROLES
         </button>
 
         <div id="pendingApprovalsList" style="margin-top: 16px;"></div>
 
-        <button class="btn btn-red" onclick="resetGame()" style="margin-top: 16px;">
-          ⚠️ RESET ENTIRE GAME
+        <button class="btn btn-red" onclick="resetGame()" style="margin-top: 20px;">
+          ⚠️ RESET WHOLE GAME
         </button>
-        <button class="btn btn-dark" onclick="closeSupervisorModal()" style="margin-top: 8px;">
+        <button class="btn btn-glass" onclick="closeSupervisorModal()" style="margin-top: 8px;">
           CLOSE PANEL
         </button>
       </div>
@@ -382,12 +534,30 @@
 
   <script>
     // ==========================================
-    // 1. SUPABASE CREDENTIALS PRE-CONFIGURED
+    // 1. SUPABASE CREDENTIALS & AUDIO ENGINE
     // ==========================================
     const SUPABASE_URL = "https://uvqxtfwcskyyisdpuycv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cXh0Zndjc2t5eWlzZHB1eWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODU1NjgsImV4cCI6MjEwNjk2MTU2OH0.aGfSOZiWjxo7Zfbat9F4VKeVySVjHJ75-er3smCKisE";
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Native Web Audio Synthesizer for Tactile Sounds
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 440, type = 'sine', duration = 0.1) {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
 
     const TEAM_NAMES = [
       "PHANTOM SPECTRES", "SHADOW VENOM", "VOID RUNNERS", "CYBER REAPERS", 
@@ -403,10 +573,10 @@
     };
 
     let localPlayer = JSON.parse(localStorage.getItem('chipset_player')) || null;
-    const SUPERVISOR_PASSCODE = '1121';
+    const SUPERVISOR_PASSCODE = '1234';
 
     // ==========================================
-    // 2. REALTIME ENGINE & INIT
+    // 2. REALTIME SYNC & INIT
     // ==========================================
     async function initApp() {
       if (localPlayer) {
@@ -414,7 +584,7 @@
         document.getElementById('stepDashboard').classList.remove('hidden');
       }
 
-      const { data, error } = await supabaseClient
+      const { data } = await supabaseClient
         .from('game_room')
         .select('state_data')
         .eq('id', 1)
@@ -425,13 +595,12 @@
         updateUI();
       }
 
-      document.getElementById('connectionStatus').innerText = '🔴 LIVE SYNC ACTIVE';
-
       supabaseClient
         .channel('public:game_room')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_room' }, payload => {
           if (payload.new && payload.new.state_data) {
             state = payload.new.state_data;
+            playBeep(600, 'triangle', 0.15);
             updateUI();
           }
         })
@@ -451,13 +620,11 @@
     // 3. USER ACTIONS
     // ==========================================
     async function registerUser() {
+      playBeep(520, 'sine', 0.1);
       const name = document.getElementById('inputName').value.trim();
       const batch = document.getElementById('selectBatch').value;
 
-      if (!name) {
-        alert("Please enter your name!");
-        return;
-      }
+      if (!name) return;
 
       localPlayer = { id: 'p_' + Date.now(), name, batch };
       localStorage.setItem('chipset_player', JSON.stringify(localPlayer));
@@ -473,11 +640,13 @@
     }
 
     async function claimCaught(teamId) {
+      playBeep(300, 'sawtooth', 0.2);
+      if (navigator.vibrate) navigator.vibrate(200);
+
       const team = state.teams.find(t => t.id === teamId);
       if (team) {
         team.status = 'PENDING';
         await syncToSupabase();
-        alert(`Catch claimed for ${team.name}! Awaiting supervisor approval.`);
       }
     }
 
@@ -485,6 +654,7 @@
     // 4. SUPERVISOR ACTIONS
     // ==========================================
     function openSupervisorModal() {
+      playBeep(400, 'sine', 0.1);
       document.getElementById('supervisorModal').classList.add('active');
     }
 
@@ -495,19 +665,21 @@
     function verifyPasscode() {
       const code = document.getElementById('inputPasscode').value;
       if (code === SUPERVISOR_PASSCODE) {
+        playBeep(880, 'sine', 0.2);
         document.getElementById('passcodeSection').classList.add('hidden');
         document.getElementById('supervisorControls').classList.remove('hidden');
       } else {
-        alert("Incorrect Passcode!");
+        playBeep(150, 'sawtooth', 0.3);
       }
     }
 
     async function startNewGame() {
       if (state.players.length < 4) {
-        alert("Need at least 4 players (3 Seekers + Hiders)!");
+        alert("Need at least 4 players!");
         return;
       }
 
+      playBeep(700, 'square', 0.3);
       let shuffled = [...state.players].sort(() => Math.random() - 0.5);
 
       const seekerObjs = shuffled.slice(0, 3);
@@ -530,7 +702,7 @@
       let nameIndex = 0;
       for (let i = 0; i < mixedHiders.length; i += 3) {
         let teamMembers = mixedHiders.slice(i, i + 3);
-        let tName = TEAM_NAMES[nameIndex % TEAM_NAMES.length] + " " + (Math.floor(nameIndex / TEAM_NAMES.length) + 1);
+        let tName = TEAM_NAMES[nameIndex % TEAM_NAMES.length];
         nameIndex++;
 
         state.teams.push({
@@ -549,6 +721,7 @@
     }
 
     async function approveCatch(teamId) {
+      playBeep(800, 'sine', 0.25);
       const team = state.teams.find(t => t.id === teamId);
       if (team) {
         team.status = 'CAUGHT';
@@ -562,7 +735,7 @@
     }
 
     async function resetGame() {
-      if (confirm("Reset game state to Lobby?")) {
+      if (confirm("Reset game state?")) {
         state.status = 'LOBBY';
         state.seekers = [];
         state.teams = [];
@@ -576,32 +749,48 @@
     // 5. RENDER & TIMER LOOPS
     // ==========================================
     function updateUI() {
+      // Lobby Players
       const lobbyList = document.getElementById('lobbyPlayerList');
       lobbyList.innerHTML = state.players.map(p => 
-        `<span class="badge-batch">${p.name} (${p.batch})</span>`
+        `<span class="member-pill">${p.name} <span class="badge-batch">${p.batch}</span></span>`
       ).join('');
 
       document.getElementById('playerCountBadge').innerText = `${state.players.length} Joined`;
 
+      // Hunters HUD
       const hunterBox = document.getElementById('hunterNamesList');
       if (state.seekers.length === 0) {
-        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No Hunters Assigned Yet</span>`;
+        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Awaiting Seeker Assignment...</span>`;
       } else {
         hunterBox.innerHTML = state.seekers.map(name => `<span class="hunter-pill">💀 ${name}</span>`).join('');
       }
 
+      // Views Toggle
       if (state.status === 'LOBBY') {
         document.getElementById('lobbyView').classList.remove('hidden');
         document.getElementById('activeTeamsList').classList.add('hidden');
         document.getElementById('timerCard').classList.add('hidden');
+        document.getElementById('statsBar').classList.add('hidden');
       } else {
         document.getElementById('lobbyView').classList.add('hidden');
         document.getElementById('activeTeamsList').classList.remove('hidden');
         document.getElementById('timerCard').classList.remove('hidden');
+        document.getElementById('statsBar').classList.remove('hidden');
         renderTeams();
+        renderStats();
       }
 
       renderPendingApprovals();
+    }
+
+    function renderStats() {
+      const total = state.teams.length;
+      const hiding = state.teams.filter(t => t.status === 'HIDING' || t.status === 'PENDING').length;
+      const caught = state.teams.filter(t => t.status === 'CAUGHT').length;
+
+      document.getElementById('statTotal').innerText = total;
+      document.getElementById('statActive').innerText = hiding;
+      document.getElementById('statCaught').innerText = caught;
     }
 
     function tickTimer() {
@@ -615,16 +804,16 @@
       document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
 
       if (state.status === 'COUNTDOWN') {
-        document.getElementById('timerLabel').innerText = 'GAME STARTING IN';
+        document.getElementById('timerLabel').innerText = 'ARENA DEPLOYMENT IN';
         if (diffSeconds === 0) {
           state.status = 'HUNTING';
           state.timerEndTime = Date.now() + (10 * 60 * 1000);
           syncToSupabase();
         }
       } else if (state.status === 'HUNTING') {
-        document.getElementById('timerLabel').innerText = 'HIDING PHASE TIME';
+        document.getElementById('timerLabel').innerText = 'HIDING PHASE COUNTDOWN';
         if (diffSeconds === 0) {
-          document.getElementById('timerLabel').innerText = 'HUNT IS FULLY ACTIVE!';
+          document.getElementById('timerLabel').innerText = 'HUNT FULLY ACTIVE';
         }
       }
     }
@@ -632,22 +821,24 @@
     function renderTeams() {
       const container = document.getElementById('activeTeamsList');
       container.innerHTML = state.teams.map(team => {
-        let statusBadge = `<span class="status-badge status-hiding">HIDING</span>`;
-        if (team.status === 'PENDING') statusBadge = `<span class="status-badge status-pending">CLAIMED CAUGHT</span>`;
-        if (team.status === 'CAUGHT') statusBadge = `<span class="status-badge status-caught">HUNTER</span>`;
+        let statusBadge = `<span class="status-badge status-hiding">IN STEALTH</span>`;
+        if (team.status === 'PENDING') statusBadge = `<span class="status-badge status-pending">CLAIM PENDING</span>`;
+        if (team.status === 'CAUGHT') statusBadge = `<span class="status-badge status-caught">ELIMINATED</span>`;
 
-        const members = team.members.map(m => `${m.name} <span class="badge-batch">${m.batch}</span>`).join(', ');
+        const members = team.members.map(m => 
+          `<span class="member-pill">${m.name} <span class="badge-batch">${m.batch}</span></span>`
+        ).join('');
 
         return `
           <div class="team-card ${team.status === 'CAUGHT' ? 'caught' : ''}">
-            <div class="team-title">
-              <span>${team.name}</span>
+            <div class="team-header">
+              <span class="team-name">${team.name}</span>
               ${statusBadge}
             </div>
-            <div class="member-list">${members}</div>
+            <div class="member-pills">${members}</div>
             ${team.status === 'HIDING' ? `
-              <button class="btn btn-red" style="padding: 10px; font-size: 0.85rem;" onclick="claimCaught('${team.id}')">
-                🎯 CAUGHT THIS TEAM
+              <button class="btn btn-red" style="padding: 10px; font-size: 0.75rem;" onclick="claimCaught('${team.id}')">
+                🎯 REPORT TEAM CAUGHT
               </button>
             ` : ''}
           </div>
@@ -660,17 +851,17 @@
       const pendingTeams = state.teams.filter(t => t.status === 'PENDING');
 
       if (pendingTeams.length === 0) {
-        container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted);">No pending catch approvals</div>`;
+        container.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted);">No pending catch reports</div>`;
         return;
       }
 
       container.innerHTML = `
-        <h4 style="color:var(--scary-red); margin-bottom: 8px;">PENDING CATCH APPROVALS</h4>
+        <div style="color:var(--accent-red); font-family:var(--font-display); font-size:0.75rem; margin-bottom: 8px;">PENDING CATCH CONFIRMATIONS</div>
         ${pendingTeams.map(team => `
-          <div style="background:#000; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid var(--scary-red);">
-            <div style="font-weight:700; color:#FFF;">${team.name}</div>
-            <button class="btn btn-red" style="padding:8px; margin-top:6px; font-size:0.8rem;" onclick="approveCatch('${team.id}')">
-              APPROVE CATCH & TURN TO HUNTERS
+          <div style="background:rgba(0,0,0,0.5); padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid var(--accent-red);">
+            <div style="font-weight:700; color:#FFF; font-size:0.85rem;">${team.name}</div>
+            <button class="btn btn-red" style="padding:8px; margin-top:8px; font-size:0.7rem;" onclick="approveCatch('${team.id}')">
+              CONFIRM CATCH & ADD TO HUNTERS
             </button>
           </div>
         `).join('')}
