@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CHiPSET — NIGHT HUNT</title>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-dark: #08080A;
+      --card-bg: #111115;
+      --card-border: #22222A;
+      --chipset-orange: #FF9900;
+      --chipset-orange-glow: rgba(255, 153, 0, 0.35);
+      --scary-red: #E63946;
+      --scary-red-glow: rgba(230, 57, 70, 0.4);
+      --text-main: #EEEEEE;
+      --text-muted: #888899;
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      padding: 16px;
+      padding-bottom: 100px;
+      min-height: 100vh;
+    }
+
+    /* Creepy Scanline Overlay */
+    body::before {
+      content: " ";
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--chipset-orange);
+      border-radius: 12px;
+      box-shadow: 0 0 15px var(--chipset-orange-glow);
+    }
+
+    .brand {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: var(--chipset-orange);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--chipset-orange);
+    }
+
+    .sub-brand {
+      font-size: 0.85rem;
+      color: var(--scary-red);
+      letter-spacing: 2px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--chipset-orange);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 16px;
+      background: #000000;
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      color: #FFF;
+      font-size: 1.1rem;
+      font-weight: 600;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--chipset-orange);
+      box-shadow: 0 0 10px var(--chipset-orange-glow);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.1s ease, filter 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-orange {
+      background: var(--chipset-orange);
+      color: #000;
+      box-shadow: 0 0 15px var(--chipset-orange-glow);
+    }
+
+    .btn-red {
+      background: var(--scary-red);
+      color: #FFF;
+      box-shadow: 0 0 15px var(--scary-red-glow);
+    }
+
+    .btn-dark {
+      background: #1C1C24;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+    }
+
+    .hunt-banner {
+      background: #190507;
+      border: 2px solid var(--scary-red);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 20px var(--scary-red-glow);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px var(--scary-red-glow); }
+      50% { box-shadow: 0 0 25px var(--scary-red-glow); }
+      100% { box-shadow: 0 0 10px var(--scary-red-glow); }
+    }
+
+    .timer-display {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--chipset-orange);
+      text-shadow: 0 0 12px var(--chipset-orange);
+      font-family: monospace;
+      margin: 10px 0;
+    }
+
+    .hunter-pill {
+      display: inline-block;
+      background: var(--scary-red);
+      color: #FFF;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin: 2px;
+    }
+
+    .team-card {
+      background: #0D0D11;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .team-card.caught {
+      border-color: var(--scary-red);
+      background: #14080A;
+      opacity: 0.7;
+    }
+
+    .team-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--chipset-orange);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .member-list {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .badge-batch {
+      background: #22222A;
+      color: var(--chipset-orange);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .status-hiding { background: #1B382B; color: #4EFEAA; }
+    .status-pending { background: #3B2A0D; color: #FFB703; }
+    .status-caught { background: #3B0D11; color: var(--scary-red); }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 2px solid var(--chipset-orange);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .connection-status {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      color: var(--chipset-orange);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header class="header">
+      <div class="brand">CHiPSET</div>
+      <div class="sub-brand">NIGHT HUNT • LIVE ARENA</div>
+    </header>
+
+    <div id="connectionStatus" class="connection-status">CONNECTING TO LIVE SERVER...</div>
+
+    <!-- STEP 1: USER REGISTRATION -->
+    <section id="stepRegister" class="card">
+      <h2 style="color: var(--chipset-orange); margin-bottom: 16px; font-size: 1.2rem;">ENTER THE HUNT</h2>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="inputName" placeholder="Enter full name" />
+      </div>
+      <div class="form-group">
+        <label>CHiPSET Batch</label>
+        <select id="selectBatch">
+          <option value="2024-25">Batch 2024-25</option>
+          <option value="2025-26">Batch 2025-26</option>
+          <option value="2026-27">Batch 2026-27</option>
+        </select>
+      </div>
+      <button class="btn btn-orange" onclick="registerUser()">JOIN ARENA</button>
+    </section>
+
+    <!-- STEP 2: MAIN LIVE GAME DASHBOARD -->
+    <main id="stepDashboard" class="hidden">
+      <!-- LIVE HUNT STATUS BANNER -->
+      <div id="huntBanner" class="hunt-banner">
+        <div style="font-size: 0.8rem; color: var(--scary-red); font-weight: 800; letter-spacing: 2px;">LIVE HUNTERS</div>
+        <div id="hunterNamesList" style="margin-top: 6px;"></div>
+      </div>
+
+      <!-- TIMER DISPLAY -->
+      <div id="timerCard" class="card hidden" style="text-align: center;">
+        <div id="timerLabel" style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted);">TIME REMAINING</div>
+        <div id="timerDisplay" class="timer-display">00:00</div>
+      </div>
+
+      <!-- TEAMS / PLAYERS DISPLAY -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 1rem; color: var(--chipset-orange);">ARENA STATUS</h3>
+          <span id="playerCountBadge" style="font-size: 0.8rem; color: var(--text-muted);">0 Joined</span>
+        </div>
+
+        <div id="lobbyView" style="color: var(--text-muted); font-size: 0.9rem;">
+          <p>Waiting for supervisor to initiate the hunt...</p>
+          <div id="lobbyPlayerList" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+        </div>
+
+        <div id="activeTeamsList" class="hidden"></div>
+      </div>
+
+      <button class="btn btn-dark" onclick="openSupervisorModal()">
+        🔐 SUPERVISOR ACCESS
+      </button>
+    </main>
+  </div>
+
+  <!-- SUPERVISOR MODAL -->
+  <div id="supervisorModal" class="modal">
+    <div class="modal-content">
+      <h3 style="color: var(--chipset-orange); margin-bottom: 16px;">SUPERVISOR PANEL</h3>
+      
+      <div id="passcodeSection">
+        <div class="form-group">
+          <label>Enter Passcode</label>
+          <input type="password" id="inputPasscode" placeholder="••••" />
+        </div>
+        <button class="btn btn-orange" onclick="verifyPasscode()">UNLOCK</button>
+        <button class="btn btn-dark" onclick="closeSupervisorModal()" style="margin-top: 8px;">CANCEL</button>
+      </div>
+
+      <div id="supervisorControls" class="hidden">
+        <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-muted);">
+          Passcode Verified • Supervisor Access Granted
+        </div>
+
+        <button class="btn btn-orange" onclick="startNewGame()" style="margin-bottom: 12px;">
+          ⚡ START GAME (ASSIGN ROLES)
+        </button>
+
+        <div id="pendingApprovalsList" style="margin-top: 16px;"></div>
+
+        <button class="btn btn-red" onclick="resetGame()" style="margin-top: 16px;">
+          ⚠️ RESET ENTIRE GAME
+        </button>
+        <button class="btn btn-dark" onclick="closeSupervisorModal()" style="margin-top: 8px;">
+          CLOSE PANEL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. SUPABASE CREDENTIALS PRE-CONFIGURED
+    // ==========================================
+    const SUPABASE_URL = "https://uvqxtfwcskyyisdpuycv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cXh0Zndjc2t5eWlzZHB1eWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODU1NjgsImV4cCI6MjEwNjk2MTU2OH0.aGfSOZiWjxo7Zfbat9F4VKeVySVjHJ75-er3smCKisE";
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const TEAM_NAMES = [
+      "PHANTOM SPECTRES", "SHADOW VENOM", "VOID RUNNERS", "CYBER REAPERS", 
+      "NIGHT STALKERS", "OBSIDIAN VIPERS", "DARK PROTOCOL", "BLOODHUNTERS"
+    ];
+
+    let state = {
+      status: 'LOBBY',
+      players: [],
+      seekers: [],
+      teams: [],
+      timerEndTime: null
+    };
+
+    let localPlayer = JSON.parse(localStorage.getItem('chipset_player')) || null;
+    const SUPERVISOR_PASSCODE = '1121';
+
+    // ==========================================
+    // 2. REALTIME ENGINE & INIT
+    // ==========================================
+    async function initApp() {
+      if (localPlayer) {
+        document.getElementById('stepRegister').classList.add('hidden');
+        document.getElementById('stepDashboard').classList.remove('hidden');
+      }
+
+      const { data, error } = await supabaseClient
+        .from('game_room')
+        .select('state_data')
+        .eq('id', 1)
+        .single();
+
+      if (data && data.state_data) {
+        state = data.state_data;
+        updateUI();
+      }
+
+      document.getElementById('connectionStatus').innerText = '🔴 LIVE SYNC ACTIVE';
+
+      supabaseClient
+        .channel('public:game_room')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_room' }, payload => {
+          if (payload.new && payload.new.state_data) {
+            state = payload.new.state_data;
+            updateUI();
+          }
+        })
+        .subscribe();
+
+      setInterval(tickTimer, 1000);
+    }
+
+    async function syncToSupabase() {
+      await supabaseClient
+        .from('game_room')
+        .update({ state_data: state, updated_at: new Date() })
+        .eq('id', 1);
+    }
+
+    // ==========================================
+    // 3. USER ACTIONS
+    // ==========================================
+    async function registerUser() {
+      const name = document.getElementById('inputName').value.trim();
+      const batch = document.getElementById('selectBatch').value;
+
+      if (!name) {
+        alert("Please enter your name!");
+        return;
+      }
+
+      localPlayer = { id: 'p_' + Date.now(), name, batch };
+      localStorage.setItem('chipset_player', JSON.stringify(localPlayer));
+
+      if (!state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        state.players.push(localPlayer);
+        await syncToSupabase();
+      }
+
+      document.getElementById('stepRegister').classList.add('hidden');
+      document.getElementById('stepDashboard').classList.remove('hidden');
+      updateUI();
+    }
+
+    async function claimCaught(teamId) {
+      const team = state.teams.find(t => t.id === teamId);
+      if (team) {
+        team.status = 'PENDING';
+        await syncToSupabase();
+        alert(`Catch claimed for ${team.name}! Awaiting supervisor approval.`);
+      }
+    }
+
+    // ==========================================
+    // 4. SUPERVISOR ACTIONS
+    // ==========================================
+    function openSupervisorModal() {
+      document.getElementById('supervisorModal').classList.add('active');
+    }
+
+    function closeSupervisorModal() {
+      document.getElementById('supervisorModal').classList.remove('active');
+    }
+
+    function verifyPasscode() {
+      const code = document.getElementById('inputPasscode').value;
+      if (code === SUPERVISOR_PASSCODE) {
+        document.getElementById('passcodeSection').classList.add('hidden');
+        document.getElementById('supervisorControls').classList.remove('hidden');
+      } else {
+        alert("Incorrect Passcode!");
+      }
+    }
+
+    async function startNewGame() {
+      if (state.players.length < 4) {
+        alert("Need at least 4 players (3 Seekers + Hiders)!");
+        return;
+      }
+
+      let shuffled = [...state.players].sort(() => Math.random() - 0.5);
+
+      const seekerObjs = shuffled.slice(0, 3);
+      state.seekers = seekerObjs.map(s => s.name);
+
+      let hiders = shuffled.slice(3);
+
+      let b24 = hiders.filter(h => h.batch === '2024-25');
+      let b25 = hiders.filter(h => h.batch === '2025-26');
+      let b26 = hiders.filter(h => h.batch === '2026-27');
+
+      let mixedHiders = [];
+      while (b24.length || b25.length || b26.length) {
+        if (b24.length) mixedHiders.push(b24.pop());
+        if (b25.length) mixedHiders.push(b25.pop());
+        if (b26.length) mixedHiders.push(b26.pop());
+      }
+
+      state.teams = [];
+      let nameIndex = 0;
+      for (let i = 0; i < mixedHiders.length; i += 3) {
+        let teamMembers = mixedHiders.slice(i, i + 3);
+        let tName = TEAM_NAMES[nameIndex % TEAM_NAMES.length] + " " + (Math.floor(nameIndex / TEAM_NAMES.length) + 1);
+        nameIndex++;
+
+        state.teams.push({
+          id: 't_' + Date.now() + '_' + i,
+          name: tName,
+          members: teamMembers,
+          status: 'HIDING'
+        });
+      }
+
+      state.status = 'COUNTDOWN';
+      state.timerEndTime = Date.now() + 10000;
+
+      await syncToSupabase();
+      closeSupervisorModal();
+    }
+
+    async function approveCatch(teamId) {
+      const team = state.teams.find(t => t.id === teamId);
+      if (team) {
+        team.status = 'CAUGHT';
+        team.members.forEach(m => {
+          if (!state.seekers.includes(m.name)) {
+            state.seekers.push(m.name);
+          }
+        });
+        await syncToSupabase();
+      }
+    }
+
+    async function resetGame() {
+      if (confirm("Reset game state to Lobby?")) {
+        state.status = 'LOBBY';
+        state.seekers = [];
+        state.teams = [];
+        state.timerEndTime = null;
+        await syncToSupabase();
+        closeSupervisorModal();
+      }
+    }
+
+    // ==========================================
+    // 5. RENDER & TIMER LOOPS
+    // ==========================================
+    function updateUI() {
+      const lobbyList = document.getElementById('lobbyPlayerList');
+      lobbyList.innerHTML = state.players.map(p => 
+        `<span class="badge-batch">${p.name} (${p.batch})</span>`
+      ).join('');
+
+      document.getElementById('playerCountBadge').innerText = `${state.players.length} Joined`;
+
+      const hunterBox = document.getElementById('hunterNamesList');
+      if (state.seekers.length === 0) {
+        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No Hunters Assigned Yet</span>`;
+      } else {
+        hunterBox.innerHTML = state.seekers.map(name => `<span class="hunter-pill">💀 ${name}</span>`).join('');
+      }
+
+      if (state.status === 'LOBBY') {
+        document.getElementById('lobbyView').classList.remove('hidden');
+        document.getElementById('activeTeamsList').classList.add('hidden');
+        document.getElementById('timerCard').classList.add('hidden');
+      } else {
+        document.getElementById('lobbyView').classList.add('hidden');
+        document.getElementById('activeTeamsList').classList.remove('hidden');
+        document.getElementById('timerCard').classList.remove('hidden');
+        renderTeams();
+      }
+
+      renderPendingApprovals();
+    }
+
+    function tickTimer() {
+      if (!state.timerEndTime || state.status === 'LOBBY') return;
+
+      const now = Date.now();
+      const diffSeconds = Math.max(0, Math.floor((state.timerEndTime - now) / 1000));
+
+      const mins = Math.floor(diffSeconds / 60).toString().padStart(2, '0');
+      const secs = (diffSeconds % 60).toString().padStart(2, '0');
+      document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+
+      if (state.status === 'COUNTDOWN') {
+        document.getElementById('timerLabel').innerText = 'GAME STARTING IN';
+        if (diffSeconds === 0) {
+          state.status = 'HUNTING';
+          state.timerEndTime = Date.now() + (10 * 60 * 1000);
+          syncToSupabase();
+        }
+      } else if (state.status === 'HUNTING') {
+        document.getElementById('timerLabel').innerText = 'HIDING PHASE TIME';
+        if (diffSeconds === 0) {
+          document.getElementById('timerLabel').innerText = 'HUNT IS FULLY ACTIVE!';
+        }
+      }
+    }
+
+    function renderTeams() {
+      const container = document.getElementById('activeTeamsList');
+      container.innerHTML = state.teams.map(team => {
+        let statusBadge = `<span class="status-badge status-hiding">HIDING</span>`;
+        if (team.status === 'PENDING') statusBadge = `<span class="status-badge status-pending">CLAIMED CAUGHT</span>`;
+        if (team.status === 'CAUGHT') statusBadge = `<span class="status-badge status-caught">HUNTER</span>`;
+
+        const members = team.members.map(m => `${m.name} <span class="badge-batch">${m.batch}</span>`).join(', ');
+
+        return `
+          <div class="team-card ${team.status === 'CAUGHT' ? 'caught' : ''}">
+            <div class="team-title">
+              <span>${team.name}</span>
+              ${statusBadge}
+            </div>
+            <div class="member-list">${members}</div>
+            ${team.status === 'HIDING' ? `
+              <button class="btn btn-red" style="padding: 10px; font-size: 0.85rem;" onclick="claimCaught('${team.id}')">
+                🎯 CAUGHT THIS TEAM
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPendingApprovals() {
+      const container = document.getElementById('pendingApprovalsList');
+      const pendingTeams = state.teams.filter(t => t.status === 'PENDING');
+
+      if (pendingTeams.length === 0) {
+        container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted);">No pending catch approvals</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <h4 style="color:var(--scary-red); margin-bottom: 8px;">PENDING CATCH APPROVALS</h4>
+        ${pendingTeams.map(team => `
+          <div style="background:#000; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid var(--scary-red);">
+            <div style="font-weight:700; color:#FFF;">${team.name}</div>
+            <button class="btn btn-red" style="padding:8px; margin-top:6px; font-size:0.8rem;" onclick="approveCatch('${team.id}')">
+              APPROVE CATCH & TURN TO HUNTERS
+            </button>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
