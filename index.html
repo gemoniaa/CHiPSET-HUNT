@@ -146,19 +146,6 @@
       animation: logoflick 3.4s infinite;
     }
     .brand-mark .logo svg { width: 100%; height: 100%; display: block; overflow: visible; }
-    .brand-mark .word {
-      font-family: var(--display);
-      font-size: 34px;
-      letter-spacing: 7px;
-      margin-top: 2px;
-      color: var(--amber);
-      -webkit-text-stroke: 0.8px var(--amber);
-      paint-order: stroke fill;
-      text-shadow: 0 0 10px var(--hot), 0 0 26px rgba(255,122,0,.7);
-      animation: logoflick 3.4s infinite;
-      animation-delay: .15s;
-    }
-    .brand-mark .word span { color: var(--blood); text-shadow: 0 0 12px #f00; }
 
     .header {
       text-align: center;
@@ -167,17 +154,45 @@
     }
 
     .brand {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 1px;
       font-family: var(--display);
       font-size: 64px;
       font-weight: 400;
-      line-height: 1;
-      letter-spacing: 2px;
+      line-height: 0.82;
+      letter-spacing: 0;
       color: var(--amber);
       text-transform: none;
       -webkit-text-stroke: 1.2px var(--amber);
       paint-order: stroke fill;
       text-shadow: 0 0 12px var(--hot), 0 0 32px rgba(255,122,0,.6), 0 4px 0 rgba(196,0,0,.85);
       animation: flicker 5s infinite;
+    }
+    .brand span { display: block; }
+    .brand .i {
+      position: relative;
+      font-size: 0.72em;
+      font-style: normal;
+      line-height: 0.72;
+      padding-top: 0.42em;
+      transform: translateY(-0.34em);
+    }
+    .brand .i::before {
+      content: "";
+      position: absolute;
+      top: 0.02em;
+      left: 50%;
+      width: 0.2em;
+      height: 0.2em;
+      margin-left: -0.1em;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 10px var(--hot), 0 0 18px rgba(255,122,0,.7);
+    }
+    .brand .e {
+      transform: translateY(-0.1em);
     }
 
     .sub-brand {
@@ -493,15 +508,6 @@
       z-index: 1001;
     }
 
-    .connection-status {
-      text-align: center;
-      font-size: 0.85rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      margin-bottom: 12px;
-      color: var(--hot);
-    }
-
     .hidden { display: none !important; }
 
     @keyframes flicker {
@@ -532,7 +538,7 @@
     @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
 
     @media (prefers-reduced-motion: reduce) {
-      h1, .brand, .timer-display, .brand-mark .logo, .brand-mark .word, .fb, .fog, .eyes, body::before { animation: none; }
+      h1, .brand, .timer-display, .brand-mark .logo, .fb, .fog, .eyes, body::before { animation: none; }
       .eyes { opacity: 0; }
     }
   </style>
@@ -581,15 +587,12 @@
   <div class="container">
     <div class="brand-mark" aria-hidden="true">
       <div class="logo"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
-      <div class="word">CH<span>i</span>PSET</div>
     </div>
 
     <header class="header">
-      <div class="brand">CHiPSET</div>
-      <div class="sub-brand">NIGHT HUNT • LIVE ARENA</div>
+      <div class="brand" aria-label="CHiPSET"><span>C</span><span>H</span><span class="i">i</span><span>P</span><span>S</span><span class="e">E</span><span>T</span></div>
+      <div class="sub-brand">NEXUS MALL • LIVE ARENA</div>
     </header>
-
-    <div id="connectionStatus" class="connection-status">CONNECTING TO LIVE SERVER...</div>
 
     <!-- STEP 1: USER REGISTRATION -->
     <section id="stepRegister" class="card">
@@ -723,8 +726,6 @@
         state = data.state_data;
         updateUI();
       }
-
-      document.getElementById('connectionStatus').innerText = '🔴 LIVE SYNC ACTIVE';
 
       supabaseClient
         .channel('public:game_room')
