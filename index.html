@@ -406,6 +406,20 @@
       margin: 3px;
     }
 
+    .vip-badge {
+      display: inline-block;
+      background: linear-gradient(45deg, #ffd700, #ff8c00);
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 6px;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.85);
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+    }
+
     .team-card {
       background:
         linear-gradient(180deg, rgba(255,176,0,.07), transparent 40%),
@@ -420,7 +434,7 @@
     }
 
     .team-card.caught {
-      opacity: .55;
+      opacity: .65;
       border-style: dashed;
       border-color: var(--blood);
       background: #0c0404;
@@ -506,6 +520,7 @@
         0 16px 40px rgba(0,0,0,.7);
       position: relative;
       z-index: 1001;
+      text-align: center;
     }
 
     .hidden { display: none !important; }
@@ -614,6 +629,28 @@
 
     <!-- STEP 2: MAIN LIVE GAME DASHBOARD -->
     <main id="stepDashboard" class="hidden">
+      <!-- USER ROLE & IDENTITY CARD (DOSSIER) -->
+      <div id="userProfileCard" class="card" style="border-color: var(--amber); background: linear-gradient(180deg, rgba(255,176,0,.14), #0e0802);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px dashed var(--amber-dim); padding-bottom: 8px;">
+          <h3 style="font-size: 26px; color: var(--chipset-orange);">YOUR DOSSIER</h3>
+          <span id="userRoleBadge" class="status-badge status-pending">LOBBY</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 1rem; text-align: left;">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">PLAYER NAME</span>
+            <strong id="userNameDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">BATCH</span>
+            <strong id="userBatchDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
+          </div>
+          <div style="grid-column: span 2;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">ASSIGNED TEAM</span>
+            <strong id="userTeamDisplay" style="color: var(--hot); font-size: 1.2rem;">AWAITING TEAM ALLOCATION</strong>
+          </div>
+        </div>
+      </div>
+
       <!-- LIVE HUNT STATUS BANNER -->
       <div id="huntBanner" class="hunt-banner">
         <div class="hunters-label">☠ HUNTERS ☠</div>
@@ -647,6 +684,15 @@
     </main>
   </div>
 
+  <!-- BROADCAST ALERT MODAL -->
+  <div id="alertModal" class="modal">
+    <div class="modal-content" style="border-color: var(--blood); box-shadow: 0 0 35px var(--scary-red-glow);">
+      <h3 id="alertModalTitle" style="color: var(--scary-red); margin-bottom: 12px; font-size: 32px;">ATTENTION</h3>
+      <div id="alertModalBody" style="color: var(--amber); font-size: 1.1rem; line-height: 1.4; margin-bottom: 20px;"></div>
+      <button class="btn btn-red" onclick="closeAlertModal()">ACKNOWLEDGE</button>
+    </div>
+  </div>
+
   <!-- SUPERVISOR MODAL -->
   <div id="supervisorModal" class="modal">
     <div class="modal-content">
@@ -672,8 +718,8 @@
 
         <div id="pendingApprovalsList" style="margin-top: 16px;"></div>
 
-        <button class="btn btn-red" onclick="resetGame()" style="margin-top: 16px;">
-          ⚠️ RESET ENTIRE GAME
+        <button class="btn btn-red" onclick="resetGame()" style="margin-top: 24px;">
+          ⚠️ RESET ENTIRE GAME (RE-REGISTER ALL)
         </button>
         <button class="btn btn-dark" onclick="closeSupervisorModal()" style="margin-top: 8px;">
           CLOSE PANEL
@@ -697,15 +743,41 @@
     ];
 
     let state = {
-      status: 'LOBBY',
+      status: 'LOBBY', // 'LOBBY', 'REVEAL_COUNTDOWN', 'MEETUP', 'HIDING', 'HUNTING'
       players: [],
       seekers: [],
       teams: [],
-      timerEndTime: null
+      timerEndTime: null,
+      lastEliminatedTeam: null
     };
 
     let localPlayer = JSON.parse(localStorage.getItem('chipset_player')) || null;
     const SUPERVISOR_PASSCODE = '1121';
+
+    let localAlertsShown = {
+      hunterStart: false,
+      eliminatedTeams: new Set()
+    };
+
+    // Helper to format names with VIP President Badge
+    function getVIPBadgeHTML(name) {
+      if (!name) return '';
+      if (name.toLowerCase().includes('abhilash')) {
+        return `<span class="vip-badge">👑 VIP President</span>`;
+      }
+      return '';
+    }
+
+    // Modal Alert Helper
+    function triggerBroadcastAlert(title, message) {
+      document.getElementById('alertModalTitle').innerText = title;
+      document.getElementById('alertModalBody').innerHTML = message;
+      document.getElementById('alertModal').classList.add('active');
+    }
+
+    function closeAlertModal() {
+      document.getElementById('alertModal').classList.remove('active');
+    }
 
     // ==========================================
     // 2. REALTIME ENGINE & INIT
@@ -724,6 +796,7 @@
 
       if (data && data.state_data) {
         state = data.state_data;
+        verifyLocalPlayerRegistration();
         updateUI();
       }
 
@@ -732,12 +805,25 @@
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_room' }, payload => {
           if (payload.new && payload.new.state_data) {
             state = payload.new.state_data;
+            verifyLocalPlayerRegistration();
             updateUI();
           }
         })
         .subscribe();
 
       setInterval(tickTimer, 1000);
+    }
+
+    function verifyLocalPlayerRegistration() {
+      // Hard reset check: If supervisor reset game state, clear local player and force back to step 1
+      if (state.status === 'LOBBY' && state.players.length === 0 && localPlayer) {
+        localStorage.removeItem('chipset_player');
+        localPlayer = null;
+        document.getElementById('stepDashboard').classList.add('hidden');
+        document.getElementById('stepRegister').classList.remove('hidden');
+        localAlertsShown.hunterStart = false;
+        localAlertsShown.eliminatedTeams.clear();
+      }
     }
 
     async function syncToSupabase() {
@@ -773,6 +859,13 @@
     }
 
     async function claimCaught(teamId) {
+      // Check if player is a hunter and game is in HUNTING phase
+      const isHunter = localPlayer && state.seekers.some(s => s.toLowerCase() === localPlayer.name.toLowerCase());
+      if (!isHunter || state.status !== 'HUNTING') {
+        alert("Only active Hunters can mark a team caught during the Hunt phase!");
+        return;
+      }
+
       const team = state.teams.find(t => t.id === teamId);
       if (team) {
         team.status = 'PENDING';
@@ -810,20 +903,22 @@
 
       let shuffled = [...state.players].sort(() => Math.random() - 0.5);
 
+      // Select 3 Seekers
       const seekerObjs = shuffled.slice(0, 3);
       state.seekers = seekerObjs.map(s => s.name);
 
       let hiders = shuffled.slice(3);
 
+      // Batch Interleaving Strategy (Mix different batches)
       let b24 = hiders.filter(h => h.batch === '2024-25');
       let b25 = hiders.filter(h => h.batch === '2025-26');
       let b26 = hiders.filter(h => h.batch === '2026-27');
 
       let mixedHiders = [];
-      while (b24.length || b25.length || b26.length) {
-        if (b24.length) mixedHiders.push(b24.pop());
-        if (b25.length) mixedHiders.push(b25.pop());
-        if (b26.length) mixedHiders.push(b26.pop());
+      while (b24.length > 0 || b25.length > 0 || b26.length > 0) {
+        if (b24.length > 0) mixedHiders.push(b24.pop());
+        if (b25.length > 0) mixedHiders.push(b25.pop());
+        if (b26.length > 0) mixedHiders.push(b26.pop());
       }
 
       state.teams = [];
@@ -841,8 +936,11 @@
         });
       }
 
-      state.status = 'COUNTDOWN';
+      // Start 10-second Role Reveal Countdown
+      state.status = 'REVEAL_COUNTDOWN';
       state.timerEndTime = Date.now() + 10000;
+      localAlertsShown.hunterStart = false;
+      localAlertsShown.eliminatedTeams.clear();
 
       await syncToSupabase();
       closeSupervisorModal();
@@ -852,6 +950,7 @@
       const team = state.teams.find(t => t.id === teamId);
       if (team) {
         team.status = 'CAUGHT';
+        state.lastEliminatedTeam = team.name;
         team.members.forEach(m => {
           if (!state.seekers.includes(m.name)) {
             state.seekers.push(m.name);
@@ -862,12 +961,21 @@
     }
 
     async function resetGame() {
-      if (confirm("Reset game state to Lobby?")) {
+      if (confirm("Reset game state to Lobby? EVERYONE will have to re-register their names!")) {
         state.status = 'LOBBY';
+        state.players = [];
         state.seekers = [];
         state.teams = [];
         state.timerEndTime = null;
+        state.lastEliminatedTeam = null;
+
+        localStorage.removeItem('chipset_player');
+        localPlayer = null;
+
         await syncToSupabase();
+
+        document.getElementById('stepDashboard').classList.add('hidden');
+        document.getElementById('stepRegister').classList.remove('hidden');
         closeSupervisorModal();
       }
     }
@@ -876,18 +984,50 @@
     // 5. RENDER & TIMER LOOPS
     // ==========================================
     function updateUI() {
+      // --- UPDATE PERSONAL DOSSIER CARD ---
+      if (localPlayer) {
+        document.getElementById('userNameDisplay').innerHTML = `${localPlayer.name} ${getVIPBadgeHTML(localPlayer.name)}`;
+        document.getElementById('userBatchDisplay').innerText = localPlayer.batch;
+
+        const isSeeker = state.seekers.some(s => s.toLowerCase() === localPlayer.name.toLowerCase());
+        const userTeam = state.teams.find(t => t.members.some(m => m.name.toLowerCase() === localPlayer.name.toLowerCase()));
+
+        const roleBadge = document.getElementById('userRoleBadge');
+        const teamDisplay = document.getElementById('userTeamDisplay');
+
+        if (state.status === 'LOBBY') {
+          roleBadge.className = 'status-badge status-pending';
+          roleBadge.innerText = 'WAITING IN LOBBY';
+          teamDisplay.innerText = 'AWAITING TEAM ALLOCATION';
+        } else if (state.status === 'REVEAL_COUNTDOWN') {
+          roleBadge.className = 'status-badge status-pending';
+          roleBadge.innerText = 'REVEALING ROLES...';
+          teamDisplay.innerText = 'CALCULATING TEAM ASSIGNMENTS...';
+        } else {
+          if (isSeeker) {
+            roleBadge.className = 'status-badge status-caught';
+            roleBadge.innerText = '☠ HUNTER';
+            teamDisplay.innerText = userTeam ? `${userTeam.name} (HUNTER CONVERTED)` : 'INITIAL HUNTER';
+          } else {
+            roleBadge.className = 'status-badge status-hiding';
+            roleBadge.innerText = '🏃 HIDER';
+            teamDisplay.innerText = userTeam ? userTeam.name : 'UNASSIGNED HIDER';
+          }
+        }
+      }
+
       const lobbyList = document.getElementById('lobbyPlayerList');
       lobbyList.innerHTML = state.players.map(p => 
-        `<span class="badge-batch">${p.name} (${p.batch})</span>`
+        `<span class="badge-batch">${p.name} ${getVIPBadgeHTML(p.name)} (${p.batch})</span>`
       ).join('');
 
       document.getElementById('playerCountBadge').innerText = `${state.players.length} Joined`;
 
       const hunterBox = document.getElementById('hunterNamesList');
-      if (state.seekers.length === 0) {
-        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No Hunters Assigned Yet</span>`;
+      if (state.seekers.length === 0 || state.status === 'REVEAL_COUNTDOWN') {
+        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">ROLES CLASSIFIED</span>`;
       } else {
-        hunterBox.innerHTML = state.seekers.map(name => `<span class="hunter-pill">💀 ${name}</span>`).join('');
+        hunterBox.innerHTML = state.seekers.map(name => `<span class="hunter-pill">💀 ${name} ${getVIPBadgeHTML(name)}</span>`).join('');
       }
 
       if (state.status === 'LOBBY') {
@@ -900,6 +1040,14 @@
         document.getElementById('timerCard').classList.remove('hidden');
         renderTeams();
       }
+
+      // Check for eliminated team alert modal across all clients
+      state.teams.forEach(t => {
+        if (t.status === 'CAUGHT' && !localAlertsShown.eliminatedTeams.has(t.id)) {
+          localAlertsShown.eliminatedTeams.add(t.id);
+          triggerBroadcastAlert('💀 TEAM HUNTED DOWN!', `<strong>${t.name}</strong> has been completely caught by the Hunters!<br><br>They have now been converted into Hunters!`);
+        }
+      });
 
       renderPendingApprovals();
     }
@@ -914,29 +1062,56 @@
       const secs = (diffSeconds % 60).toString().padStart(2, '0');
       document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
 
-      if (state.status === 'COUNTDOWN') {
-        document.getElementById('timerLabel').innerText = 'GAME STARTING IN';
+      if (state.status === 'REVEAL_COUNTDOWN') {
+        document.getElementById('timerLabel').innerText = 'ROLES REVEALING IN';
         if (diffSeconds === 0) {
-          state.status = 'HUNTING';
+          // Transition to 2-minute Meetup Phase
+          state.status = 'MEETUP';
+          state.timerEndTime = Date.now() + (2 * 60 * 1000);
+          syncToSupabase();
+        }
+      } else if (state.status === 'MEETUP') {
+        document.getElementById('timerLabel').innerText = 'TEAM MEETUP PHASE (MEET YOUR TEAM)';
+        if (diffSeconds === 0) {
+          // Transition to 10-minute Hiding Phase
+          state.status = 'HIDING';
           state.timerEndTime = Date.now() + (10 * 60 * 1000);
           syncToSupabase();
         }
-      } else if (state.status === 'HUNTING') {
-        document.getElementById('timerLabel').innerText = 'HIDING PHASE TIME';
+      } else if (state.status === 'HIDING') {
+        document.getElementById('timerLabel').innerText = 'HIDING PHASE (RUN & HIDE)';
         if (diffSeconds === 0) {
-          document.getElementById('timerLabel').innerText = 'HUNT IS FULLY ACTIVE!';
+          // Transition to Active Hunt Phase
+          state.status = 'HUNTING';
+          state.timerEndTime = null;
+          syncToSupabase();
+        }
+      } else if (state.status === 'HUNTING') {
+        document.getElementById('timerLabel').innerText = 'HUNT IS FULLY ACTIVE!';
+        document.getElementById('timerDisplay').innerText = '☠ LIVE ☠';
+
+        if (!localAlertsShown.hunterStart) {
+          localAlertsShown.hunterStart = true;
+          triggerBroadcastAlert('⚠️ HUNTERS ON THE HUNT! ⚠️', 'The 10-minute hiding phase is OVER!<br><br>Hunters are now officially released into Nexus Mall. Stay hidden!');
         }
       }
     }
 
     function renderTeams() {
       const container = document.getElementById('activeTeamsList');
+      const isHunter = localPlayer && state.seekers.some(s => s.toLowerCase() === localPlayer.name.toLowerCase());
+
       container.innerHTML = state.teams.map(team => {
         let statusBadge = `<span class="status-badge status-hiding">HIDING</span>`;
         if (team.status === 'PENDING') statusBadge = `<span class="status-badge status-pending">CLAIMED CAUGHT</span>`;
-        if (team.status === 'CAUGHT') statusBadge = `<span class="status-badge status-caught">HUNTER</span>`;
+        if (team.status === 'CAUGHT') statusBadge = `<span class="status-badge status-caught">TEAM HUNTED</span>`;
 
-        const members = team.members.map(m => `${m.name} <span class="badge-batch">${m.batch}</span>`).join(', ');
+        // Batch details intentionally excluded from team members list
+        const members = team.members.map(m => `${m.name} ${getVIPBadgeHTML(m.name)}`).join(', ');
+
+        // Hiders do NOT get the Caught button under any circumstances.
+        // Button only shows during active HUNTING phase for Hunters.
+        const canPressCaught = isHunter && state.status === 'HUNTING' && team.status === 'HIDING';
 
         return `
           <div class="team-card ${team.status === 'CAUGHT' ? 'caught' : ''}">
@@ -945,7 +1120,7 @@
               ${statusBadge}
             </div>
             <div class="member-list">${members}</div>
-            ${team.status === 'HIDING' ? `
+            ${canPressCaught ? `
               <button class="btn btn-red" style="padding: 10px; font-size: 0.85rem; min-height: 48px;" onclick="claimCaught('${team.id}')">
                 🎯 CAUGHT THIS TEAM
               </button>
