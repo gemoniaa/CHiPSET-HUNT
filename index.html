@@ -2,22 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>CHiPSET — NIGHT HUNT</title>
-  <!-- Supabase JS Client -->
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg-dark: #08080A;
-      --card-bg: #111115;
-      --card-border: #22222A;
-      --chipset-orange: #FF9900;
-      --chipset-orange-glow: rgba(255, 153, 0, 0.35);
-      --scary-red: #E63946;
-      --scary-red-glow: rgba(230, 57, 70, 0.4);
-      --text-main: #EEEEEE;
-      --text-muted: #888899;
-      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --bg: #030202;
+      --amber: #FFB000;
+      --amber-dim: #9a6a00;
+      --hot: #FF7A00;
+      --blood: #c40000;
+      --panel: #0e0802;
+      --line: #3b2a00;
+      --bg-dark: #030202;
+      --card-bg: #0e0802;
+      --card-border: #3b2a00;
+      --chipset-orange: #FFB000;
+      --chipset-orange-glow: rgba(255, 122, 0, 0.55);
+      --scary-red: #c40000;
+      --scary-red-glow: rgba(196, 0, 0, 0.5);
+      --text-main: #FFB000;
+      --text-muted: #c48a20;
+      --font-stack: 'Oswald', Impact, sans-serif;
+      --display: 'Creepster', cursive;
     }
 
     * {
@@ -25,233 +33,440 @@
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--amber);
+      font-family: var(--font-stack);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      font-family: var(--font-stack);
-      padding: 16px;
-      padding-bottom: 100px;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(255,122,0,.20), transparent 55%),
+        radial-gradient(ellipse at 50% 100%, rgba(196,0,0,.16), transparent 55%),
+        var(--bg);
       min-height: 100vh;
+      overflow-x: hidden;
+      padding: 0 16px 80px;
     }
 
-    /* Creepy Scanline Overlay */
-    body::before {
-      content: " ";
+    body::after {
+      content: "";
       position: fixed;
-      top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-      background-size: 100% 4px;
-      z-index: 999;
+      inset: 0;
       pointer-events: none;
-      opacity: 0.6;
+      z-index: 5;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.92) 100%);
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      background: rgba(255,160,40,.16);
+      opacity: 0;
+      animation: surge 9s infinite;
+    }
+
+    .deco {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .fog {
+      position: absolute;
+      left: -30%;
+      width: 160%;
+      height: 40%;
+      background: radial-gradient(ellipse at center, rgba(255,140,40,.10), transparent 65%);
+      filter: blur(18px);
+      animation: drift 22s linear infinite;
+    }
+    .fog.f1 { bottom: -8%; }
+    .fog.f2 { bottom: 18%; animation-duration: 34s; animation-direction: reverse; opacity: .7; }
+    .drip { position: absolute; top: 0; left: 0; width: 100%; height: 90px; opacity: .9; }
+    .web { position: absolute; width: 150px; height: 150px; opacity: .55; color: #d8c7a0; }
+    .web.tl { top: 0; left: 0; }
+    .web.tr { top: 0; right: 0; transform: scaleX(-1); }
+    .fb {
+      position: absolute;
+      color: var(--amber);
+      opacity: .22;
+      filter: drop-shadow(0 0 8px var(--hot));
+      animation: bflick 4s infinite, bfloat 9s ease-in-out infinite;
+    }
+    .fb svg { width: 100%; height: 100%; display: block; }
+    .fb.b1 { width: 70px; left: 4%; top: 24%; animation-delay: .3s, 0s; }
+    .fb.b2 { width: 54px; right: 5%; top: 38%; animation-delay: 1.7s, 2s; opacity: .18; }
+    .fb.b3 { width: 90px; left: -14px; bottom: 10%; animation-delay: 2.4s, 1s; opacity: .16; }
+    .fb.b4 { width: 64px; right: 3%; bottom: 7%; animation-delay: .9s, 3s; }
+    .fb.b5 { width: 40px; left: 42%; top: 52%; animation-delay: 3.1s, 4s; opacity: .08; }
+    .eyes { position: absolute; display: flex; gap: 10px; animation: blink 7s infinite; }
+    .eyes i {
+      display: block;
+      width: 12px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--blood);
+      box-shadow: 0 0 10px 3px rgba(255,30,0,.8);
+    }
+    .eyes.e1 { left: 9%; top: 68%; }
+    .eyes.e2 { right: 10%; top: 16%; animation-delay: 3s; transform: scale(.8); }
+    .eyes.e3 { left: 30%; bottom: 3%; animation-delay: 5s; transform: scale(.6); }
 
     .container {
-      max-width: 500px;
+      position: relative;
+      z-index: 2;
+      max-width: 520px;
       margin: 0 auto;
+      padding-top: 6px;
     }
+
+    .brand-mark {
+      text-align: center;
+      padding-top: 10px;
+      margin-bottom: 4px;
+    }
+    .brand-mark .logo {
+      width: 104px;
+      height: 124px;
+      margin: 0 auto;
+      color: var(--amber);
+      filter: drop-shadow(0 0 10px var(--hot)) drop-shadow(0 0 28px rgba(255,122,0,.7));
+      animation: logoflick 3.4s infinite;
+    }
+    .brand-mark .logo svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .brand-mark .word {
+      font-family: var(--display);
+      font-size: 34px;
+      letter-spacing: 7px;
+      margin-top: 2px;
+      color: var(--amber);
+      -webkit-text-stroke: 0.8px var(--amber);
+      paint-order: stroke fill;
+      text-shadow: 0 0 10px var(--hot), 0 0 26px rgba(255,122,0,.7);
+      animation: logoflick 3.4s infinite;
+      animation-delay: .15s;
+    }
+    .brand-mark .word span { color: var(--blood); text-shadow: 0 0 12px #f00; }
 
     .header {
       text-align: center;
-      margin-bottom: 20px;
-      padding: 16px;
-      background: var(--card-bg);
-      border: 1px solid var(--chipset-orange);
-      border-radius: 12px;
-      box-shadow: 0 0 15px var(--chipset-orange-glow);
+      margin-bottom: 18px;
+      padding: 12px 8px 0;
     }
 
     .brand {
-      font-size: 1.6rem;
-      font-weight: 900;
-      letter-spacing: 3px;
-      color: var(--chipset-orange);
-      text-transform: uppercase;
-      text-shadow: 0 0 8px var(--chipset-orange);
+      font-family: var(--display);
+      font-size: 64px;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 2px;
+      color: var(--amber);
+      text-transform: none;
+      -webkit-text-stroke: 1.2px var(--amber);
+      paint-order: stroke fill;
+      text-shadow: 0 0 12px var(--hot), 0 0 32px rgba(255,122,0,.6), 0 4px 0 rgba(196,0,0,.85);
+      animation: flicker 5s infinite;
     }
 
     .sub-brand {
-      font-size: 0.85rem;
-      color: var(--scary-red);
-      letter-spacing: 2px;
+      font-size: 1.05rem;
+      color: var(--hot);
+      letter-spacing: 5px;
       font-weight: 700;
-      margin-top: 4px;
+      margin-top: 8px;
+      text-shadow: 0 0 10px rgba(255,122,0,.6);
+    }
+
+    h2, h3, h4 {
+      font-family: var(--display);
+      font-weight: 400;
+      letter-spacing: 2px;
+      -webkit-text-stroke: 0.7px currentColor;
+      paint-order: stroke fill;
     }
 
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(255,176,0,.08), transparent 28%),
+        linear-gradient(180deg, #161005 0%, #0a0502 100%);
+      border: 3px solid var(--amber-dim);
+      border-radius: 18px;
       padding: 20px;
       margin-bottom: 16px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,176,0,.22),
+        inset 0 0 28px rgba(0,0,0,.55),
+        0 10px 28px rgba(0,0,0,.55),
+        0 0 18px rgba(255,122,0,.12);
     }
 
-    .form-group {
-      margin-bottom: 16px;
-    }
+    .form-group { margin-bottom: 16px; }
 
     label {
       display: block;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--chipset-orange);
-      letter-spacing: 1px;
+      font-size: 0.95rem;
+      color: var(--hot);
+      letter-spacing: 2.5px;
       margin-bottom: 8px;
       text-transform: uppercase;
+      font-weight: 700;
     }
 
     input, select {
       width: 100%;
-      padding: 16px;
-      background: #000000;
-      border: 2px solid var(--card-border);
-      border-radius: 10px;
-      color: #FFF;
-      font-size: 1.1rem;
-      font-weight: 600;
+      height: 64px;
+      padding: 0 18px;
+      background: #050300;
+      border: 3px solid var(--amber);
+      border-radius: 14px;
+      color: var(--amber);
+      font-family: inherit;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       outline: none;
+      box-shadow:
+        inset 0 3px 10px rgba(0,0,0,.7),
+        0 0 12px rgba(255,176,0,.18);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    select {
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--amber) 50%),
+        linear-gradient(135deg, var(--amber) 50%, transparent 50%);
+      background-position:
+        calc(100% - 22px) 28px,
+        calc(100% - 16px) 28px;
+      background-size: 7px 7px, 7px 7px;
+      background-repeat: no-repeat;
+      padding-right: 44px;
     }
 
     input:focus, select:focus {
-      border-color: var(--chipset-orange);
-      box-shadow: 0 0 10px var(--chipset-orange-glow);
+      border-color: var(--hot);
+      box-shadow:
+        inset 0 3px 10px rgba(0,0,0,.7),
+        0 0 0 3px rgba(255,122,0,.25),
+        0 0 22px rgba(255,176,0,.55);
     }
+
+    input::placeholder { color: var(--amber-dim); font-weight: 500; }
+
+    select option { background: #050300; color: var(--amber); }
 
     .btn {
       width: 100%;
-      padding: 18px;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 900;
-      letter-spacing: 1px;
+      min-height: 64px;
+      padding: 16px 18px;
+      border: 3px solid transparent;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
       text-transform: uppercase;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      transition: transform 0.1s ease, filter 0.2s ease;
-      margin-top: 8px;
+      margin-top: 14px;
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
     }
 
-    .btn:active {
-      transform: scale(0.97);
-    }
+    .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn:active { transform: translateY(3px); filter: brightness(0.96); }
 
     .btn-orange {
-      background: var(--chipset-orange);
-      color: #000;
-      box-shadow: 0 0 15px var(--chipset-orange-glow);
+      background: linear-gradient(180deg, #ffd056 0%, var(--amber) 42%, #d47800 100%);
+      color: #1a0b00;
+      border-color: #ffe08a;
+      box-shadow:
+        inset 0 2px 0 rgba(255,255,220,.45),
+        0 5px 0 #7a2a00,
+        0 0 22px rgba(255,122,0,.5);
+    }
+    .btn-orange:active {
+      box-shadow:
+        inset 0 2px 8px rgba(0,0,0,.35),
+        0 1px 0 #7a2a00,
+        0 0 12px rgba(255,122,0,.4);
     }
 
     .btn-red {
-      background: var(--scary-red);
-      color: #FFF;
-      box-shadow: 0 0 15px var(--scary-red-glow);
+      background: linear-gradient(180deg, #ff9a3a 0%, var(--hot) 45%, #c43000 100%);
+      color: #1a0500;
+      border-color: #ffc48a;
+      box-shadow:
+        inset 0 2px 0 rgba(255,230,200,.4),
+        0 5px 0 #6a1000,
+        0 0 22px rgba(255,80,0,.5);
+    }
+    .btn-red:active {
+      box-shadow:
+        inset 0 2px 8px rgba(0,0,0,.35),
+        0 1px 0 #6a1000,
+        0 0 12px rgba(255,80,0,.4);
     }
 
     .btn-dark {
-      background: #1C1C24;
-      color: var(--text-main);
-      border: 1px solid var(--card-border);
+      background:
+        linear-gradient(180deg, rgba(255,176,0,.16), rgba(255,176,0,.05));
+      color: var(--amber);
+      border-color: var(--amber);
+      box-shadow:
+        inset 0 1px 0 rgba(255,176,0,.25),
+        0 4px 0 #3b2200,
+        0 0 14px rgba(255,176,0,.18);
+    }
+    .btn-dark:active {
+      box-shadow:
+        inset 0 2px 8px rgba(0,0,0,.45),
+        0 1px 0 #3b2200;
     }
 
     .hunt-banner {
-      background: #190507;
-      border: 2px solid var(--scary-red);
-      border-radius: 12px;
-      padding: 16px;
+      background:
+        linear-gradient(180deg, rgba(196,0,0,.22), transparent 40%),
+        #090000;
+      border: 3px solid var(--blood);
+      border-radius: 18px;
+      padding: 18px;
       text-align: center;
       margin-bottom: 16px;
-      box-shadow: 0 0 20px var(--scary-red-glow);
-      animation: pulse 2s infinite;
+      box-shadow:
+        inset 0 1px 0 rgba(255,80,40,.25),
+        0 0 24px rgba(196,0,0,.5),
+        inset 0 0 20px rgba(196,0,0,.2);
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 10px var(--scary-red-glow); }
-      50% { box-shadow: 0 0 25px var(--scary-red-glow); }
-      100% { box-shadow: 0 0 10px var(--scary-red-glow); }
+    .hunt-banner .hunters-label {
+      font-family: var(--display);
+      font-size: 34px;
+      font-weight: 400;
+      color: #ff3a1a;
+      letter-spacing: 2px;
+      -webkit-text-stroke: 0.8px #ff3a1a;
+      paint-order: stroke fill;
+      text-shadow: 0 0 12px rgba(255,30,0,.8);
     }
 
     .timer-display {
-      font-size: 2.8rem;
-      font-weight: 900;
-      color: var(--chipset-orange);
-      text-shadow: 0 0 12px var(--chipset-orange);
-      font-family: monospace;
+      font-family: var(--display);
+      font-size: min(22vw, 96px);
+      font-weight: 400;
+      color: var(--amber);
+      -webkit-text-stroke: 1.4px var(--amber);
+      paint-order: stroke fill;
+      text-shadow: 0 0 20px var(--hot), 0 0 40px rgba(196,0,0,.6);
+      animation: pulse 1s infinite;
       margin: 10px 0;
+      line-height: 1;
     }
 
     .hunter-pill {
       display: inline-block;
-      background: var(--scary-red);
-      color: #FFF;
-      font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      margin: 2px;
+      background: rgba(255,176,0,.1);
+      color: var(--amber);
+      font-weight: 700;
+      padding: 6px 12px;
+      border: 2px solid var(--amber-dim);
+      border-radius: 999px;
+      font-size: 1rem;
+      margin: 3px;
     }
 
     .team-card {
-      background: #0D0D11;
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(255,176,0,.07), transparent 40%),
+        #100802;
+      border: 3px solid var(--amber-dim);
+      border-radius: 16px;
       padding: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,176,0,.18),
+        0 6px 16px rgba(0,0,0,.4);
     }
 
     .team-card.caught {
-      border-color: var(--scary-red);
-      background: #14080A;
-      opacity: 0.7;
+      opacity: .55;
+      border-style: dashed;
+      border-color: var(--blood);
+      background: #0c0404;
     }
 
     .team-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--chipset-orange);
+      font-family: var(--display);
+      font-size: 30px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      color: var(--amber);
+      -webkit-text-stroke: 0.6px var(--amber);
+      paint-order: stroke fill;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
       margin-bottom: 8px;
     }
 
+    .team-card.caught .team-title { text-decoration: line-through; }
+
     .member-list {
-      font-size: 0.9rem;
+      font-size: 16px;
+      font-weight: 600;
       color: var(--text-muted);
       margin-bottom: 12px;
     }
 
     .badge-batch {
-      background: #22222A;
-      color: var(--chipset-orange);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
+      background: #140c04;
+      border: 2px solid var(--amber-dim);
+      color: var(--amber);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: inset 0 1px 0 rgba(255,176,0,.15);
     }
 
     .status-badge {
-      font-size: 0.75rem;
-      font-weight: 800;
-      padding: 4px 8px;
-      border-radius: 6px;
+      font-family: var(--font-stack);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 999px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
+      text-decoration: none;
+      white-space: nowrap;
     }
 
-    .status-hiding { background: #1B382B; color: #4EFEAA; }
-    .status-pending { background: #3B2A0D; color: #FFB703; }
-    .status-caught { background: #3B0D11; color: var(--scary-red); }
+    .status-hiding { background: rgba(255,122,0,.12); color: var(--hot); border: 2px solid var(--hot); }
+    .status-pending { background: #3B2A0D; color: #FFB703; border: 2px solid #FFB703; }
+    .status-caught { background: #3B0D11; color: #ff3a1a; border: 2px solid var(--blood); }
 
     .modal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.88);
       backdrop-filter: blur(5px);
       z-index: 1000;
       align-items: center;
@@ -262,29 +477,113 @@
     .modal.active { display: flex; }
 
     .modal-content {
-      background: var(--card-bg);
-      border: 2px solid var(--chipset-orange);
-      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(255,176,0,.1), transparent 30%),
+        linear-gradient(180deg, #181005, #0a0502);
+      border: 3px solid var(--amber);
+      border-radius: 18px;
       padding: 24px;
       width: 100%;
       max-width: 420px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,176,0,.28),
+        0 0 28px rgba(255,122,0,.35),
+        0 16px 40px rgba(0,0,0,.7);
+      position: relative;
+      z-index: 1001;
     }
 
     .connection-status {
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       font-weight: 700;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-      color: var(--chipset-orange);
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: var(--hot);
     }
 
     .hidden { display: none !important; }
+
+    @keyframes flicker {
+      0%,18%,22%,25%,53%,57%,100% { opacity: 1; }
+      20%,24%,55% { opacity: .35; }
+    }
+    @keyframes logoflick {
+      0%,12%,16%,19%,44%,48%,70%,100% { opacity: 1; }
+      14% { opacity: .15; }
+      17% { opacity: .5; }
+      46% { opacity: .08; }
+      71% { opacity: .4; }
+      73% { opacity: .9; }
+      75% { opacity: .2; }
+    }
+    @keyframes bflick {
+      0%,10%,14%,40%,44%,100% { opacity: .22; }
+      12%,42% { opacity: .04; }
+      60% { opacity: .3; }
+    }
+    @keyframes bfloat {
+      0%,100% { transform: translateY(0) rotate(-4deg); }
+      50% { transform: translateY(-18px) rotate(5deg); }
+    }
+    @keyframes drift { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+    @keyframes blink { 0%,90%,100% { opacity: 0; } 92%,96% { opacity: 1; } 94% { opacity: 0; } }
+    @keyframes surge { 0%,93%,100% { opacity: 0; } 94% { opacity: 1; } 95% { opacity: .1; } 96% { opacity: .8; } 98% { opacity: 0; } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      h1, .brand, .timer-display, .brand-mark .logo, .brand-mark .word, .fb, .fog, .eyes, body::before { animation: none; }
+      .eyes { opacity: 0; }
+    }
   </style>
 </head>
 <body>
 
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="bulb" viewBox="0 0 120 150">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke-width="6" d="M60 18 C36 18 18 36 18 58 C18 73 27 83 35 93 C40 99 41 104 41 110 L79 110 C79 104 80 99 85 93 C93 83 102 73 102 58 C102 36 84 18 60 18Z"/>
+        <path stroke-width="4" d="M60 110 V88 M60 88 L47 76 V56 M60 88 L74 74 V50 M60 98 L52 90 M47 76 L40 68"/>
+        <path stroke-width="5" d="M45 118 H75 M47 128 H73 M52 138 H68"/>
+        <path stroke-width="5" d="M60 2 V10 M20 14 L25 22 M100 14 L95 22 M4 44 L12 47 M116 44 L108 47 M8 78 L16 74 M112 78 L104 74"/>
+      </g>
+      <g fill="currentColor">
+        <circle cx="47" cy="52" r="6"/><circle cx="74" cy="46" r="5"/><circle cx="40" cy="66" r="4"/>
+        <circle cx="82" cy="72" r="5"/><circle cx="60" cy="88" r="3"/>
+      </g>
+    </symbol>
+    <symbol id="web" viewBox="0 0 150 150">
+      <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+        <path d="M0 0 L150 0 M0 0 L0 150 M0 0 L120 110 M0 0 L60 145 M0 0 L145 60"/>
+        <path d="M30 0 Q22 22 0 30 M60 0 Q46 46 0 60 M90 0 Q70 70 0 90 M120 0 Q94 94 0 120"/>
+      </g>
+    </symbol>
+  </svg>
+
+  <div class="deco" aria-hidden="true">
+    <div class="fog f1"></div>
+    <div class="fog f2"></div>
+    <svg class="drip" viewBox="0 0 400 90" preserveAspectRatio="none">
+      <path fill="#8a0000" d="M0 0H400V14 C390 14 388 40 380 40 C372 40 372 14 360 14 C345 14 346 62 336 62 C326 62 330 14 310 14 C296 14 298 30 290 30 C282 30 284 14 262 14 C246 14 250 52 240 52 C230 52 232 14 210 14 C196 14 198 34 190 34 C182 34 184 14 160 14 C146 14 148 70 138 70 C128 70 130 14 110 14 C96 14 98 28 90 28 C82 28 84 14 60 14 C46 14 48 46 38 46 C28 46 30 14 12 14 C6 14 4 22 0 22Z"/>
+    </svg>
+    <svg class="web tl"><use href="#web"/></svg>
+    <svg class="web tr"><use href="#web"/></svg>
+    <div class="fb b1"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
+    <div class="fb b2"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
+    <div class="fb b3"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
+    <div class="fb b4"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
+    <div class="fb b5"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
+    <div class="eyes e1"><i></i><i></i></div>
+    <div class="eyes e2"><i></i><i></i></div>
+    <div class="eyes e3"><i></i><i></i></div>
+  </div>
+
   <div class="container">
+    <div class="brand-mark" aria-hidden="true">
+      <div class="logo"><svg viewBox="0 0 120 150"><use href="#bulb"/></svg></div>
+      <div class="word">CH<span>i</span>PSET</div>
+    </div>
+
     <header class="header">
       <div class="brand">CHiPSET</div>
       <div class="sub-brand">NIGHT HUNT • LIVE ARENA</div>
@@ -294,7 +593,7 @@
 
     <!-- STEP 1: USER REGISTRATION -->
     <section id="stepRegister" class="card">
-      <h2 style="color: var(--chipset-orange); margin-bottom: 16px; font-size: 1.2rem;">ENTER THE HUNT</h2>
+      <h2 style="color: var(--chipset-orange); margin-bottom: 16px; font-size: 34px; text-align: center; text-shadow: 0 0 14px rgba(255,122,0,.7), 0 2px 0 rgba(196,0,0,.6);">ENTER THE HUNT</h2>
       <div class="form-group">
         <label>Your Name</label>
         <input type="text" id="inputName" placeholder="Enter full name" />
@@ -314,20 +613,20 @@
     <main id="stepDashboard" class="hidden">
       <!-- LIVE HUNT STATUS BANNER -->
       <div id="huntBanner" class="hunt-banner">
-        <div style="font-size: 0.8rem; color: var(--scary-red); font-weight: 800; letter-spacing: 2px;">LIVE HUNTERS</div>
+        <div class="hunters-label">☠ HUNTERS ☠</div>
         <div id="hunterNamesList" style="margin-top: 6px;"></div>
       </div>
 
       <!-- TIMER DISPLAY -->
       <div id="timerCard" class="card hidden" style="text-align: center;">
-        <div id="timerLabel" style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted);">TIME REMAINING</div>
+        <div id="timerLabel" style="font-size: 0.85rem; letter-spacing: 3px; color: var(--text-muted);">TIME REMAINING</div>
         <div id="timerDisplay" class="timer-display">00:00</div>
       </div>
 
       <!-- TEAMS / PLAYERS DISPLAY -->
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 1rem; color: var(--chipset-orange);">ARENA STATUS</h3>
+          <h3 style="font-size: 28px; color: var(--chipset-orange);">ARENA STATUS</h3>
           <span id="playerCountBadge" style="font-size: 0.8rem; color: var(--text-muted);">0 Joined</span>
         </div>
 
@@ -348,7 +647,7 @@
   <!-- SUPERVISOR MODAL -->
   <div id="supervisorModal" class="modal">
     <div class="modal-content">
-      <h3 style="color: var(--chipset-orange); margin-bottom: 16px;">SUPERVISOR PANEL</h3>
+      <h3 style="color: var(--chipset-orange); margin-bottom: 16px; font-size: 32px;">SUPERVISOR PANEL</h3>
       
       <div id="passcodeSection">
         <div class="form-group">
@@ -646,7 +945,7 @@
             </div>
             <div class="member-list">${members}</div>
             ${team.status === 'HIDING' ? `
-              <button class="btn btn-red" style="padding: 10px; font-size: 0.85rem;" onclick="claimCaught('${team.id}')">
+              <button class="btn btn-red" style="padding: 10px; font-size: 0.85rem; min-height: 48px;" onclick="claimCaught('${team.id}')">
                 🎯 CAUGHT THIS TEAM
               </button>
             ` : ''}
@@ -667,9 +966,9 @@
       container.innerHTML = `
         <h4 style="color:var(--scary-red); margin-bottom: 8px;">PENDING CATCH APPROVALS</h4>
         ${pendingTeams.map(team => `
-          <div style="background:#000; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid var(--scary-red);">
-            <div style="font-weight:700; color:#FFF;">${team.name}</div>
-            <button class="btn btn-red" style="padding:8px; margin-top:6px; font-size:0.8rem;" onclick="approveCatch('${team.id}')">
+          <div style="background:#120404; padding:12px; border-radius:12px; margin-bottom:10px; border:2px solid var(--scary-red); box-shadow: inset 0 1px 0 rgba(255,60,40,.2);">
+            <div style="font-weight:700; color:var(--amber);">${team.name}</div>
+            <button class="btn btn-red" style="padding:8px; margin-top:6px; font-size:0.8rem; min-height:48px;" onclick="approveCatch('${team.id}')">
               APPROVE CATCH & TURN TO HUNTERS
             </button>
           </div>
