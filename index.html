@@ -871,6 +871,23 @@
 
         <div id="pendingApprovalsList" style="margin-top: 16px;"></div>
 
+        <div class="admin-label">KICK A PLAYER</div>
+        <button class="btn btn-dark" id="kickOpenBtn" onclick="openKickPanel()" style="margin-top: 6px;">
+          🥾 KICK PLAYER FROM GAME
+        </button>
+        <div id="kickPanel" class="hidden" style="margin-top: 10px; background: #0e0400; border: 2px solid var(--amber-dim); border-radius: 14px; padding: 14px;">
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 1.5px;">SELECT PLAYER TO KICK</div>
+          <div id="kickPlayerList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          <div id="kickConfirmBox" class="hidden" style="margin-top: 14px; background: #1a0404; border: 2px solid var(--blood); border-radius: 12px; padding: 12px; text-align: center;">
+            <div style="color: var(--amber); font-size: 1rem; margin-bottom: 10px;">Kick <strong id="kickTargetName" style="color: #ff3a1a;"></strong> from the game?</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-red" style="margin-top: 0; min-height: 48px; font-size: 0.9rem;" onclick="confirmKick()">✅ CONFIRM KICK</button>
+              <button class="btn btn-dark" style="margin-top: 0; min-height: 48px; font-size: 0.9rem;" onclick="cancelKick()">CANCEL</button>
+            </div>
+          </div>
+          <button class="btn btn-dark" onclick="closeKickPanel()" style="margin-top: 10px; min-height: 44px; font-size: 0.85rem;">CLOSE</button>
+        </div>
+
         <button class="btn btn-siren" onclick="triggerRecall()" style="margin-top: 22px;">
           🚨 EMERGENCY RECALL SIREN
         </button>
@@ -2280,6 +2297,77 @@
           </div>
         `).join('')}
       `;
+    }
+
+    // ==========================================
+    // KICK PLAYER
+    // ==========================================
+    let kickTarget = null;
+
+    function openKickPanel() {
+      kickTarget = null;
+      el('kickConfirmBox').classList.add('hidden');
+      renderKickList();
+      el('kickPanel').classList.remove('hidden');
+      el('kickOpenBtn').classList.add('hidden');
+    }
+
+    function closeKickPanel() {
+      el('kickPanel').classList.add('hidden');
+      el('kickOpenBtn').classList.remove('hidden');
+      kickTarget = null;
+      el('kickConfirmBox').classList.add('hidden');
+    }
+
+    function renderKickList() {
+      const list = el('kickPlayerList');
+      if (!state.players.length) {
+        list.innerHTML = `<div style="color: var(--text-muted); font-size: 0.9rem;">No players in the lobby yet.</div>`;
+        return;
+      }
+      list.innerHTML = state.players.map(p => `
+        <button class="btn btn-dark" style="margin-top: 0; min-height: 50px; font-size: 0.95rem; justify-content: space-between; padding: 10px 16px;"
+          onclick="selectKickTarget('${p.id}', '${esc(p.name)}')">
+          <span>${esc(p.name)} <span style="font-size:0.78rem; color: var(--text-muted);">(${esc(p.batch)})</span></span>
+          <span style="color: var(--blood); font-size: 1.1rem;">✕</span>
+        </button>
+      `).join('');
+    }
+
+    function selectKickTarget(id, name) {
+      kickTarget = { id, name };
+      el('kickTargetName').innerText = name;
+      el('kickConfirmBox').classList.remove('hidden');
+    }
+
+    function cancelKick() {
+      kickTarget = null;
+      el('kickConfirmBox').classList.add('hidden');
+    }
+
+    async function confirmKick() {
+      if (!kickTarget || !isSupervisor()) return;
+      const { id, name } = kickTarget;
+      const res = await mutate(s => {
+        const idx = s.players.findIndex(p => p.id === id);
+        if (idx === -1) return false;
+        s.players.splice(idx, 1);
+
+        // If game is running, also remove from seekers and team members
+        s.seekers = s.seekers.filter(n => !sameName(n, name));
+        s.teams.forEach(t => {
+          t.members = t.members.filter(m => !sameName(m.name, name));
+        });
+        // Remove empty teams
+        s.teams = s.teams.filter(t => t.members.length > 0);
+        return true;
+      });
+      if (res === 'ok') {
+        showNotice(`🥾 ${name} has been kicked`);
+        kickTarget = null;
+        el('kickConfirmBox').classList.add('hidden');
+        renderKickList();
+      }
     }
 
     window.addEventListener('DOMContentLoaded', initApp);
