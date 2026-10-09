@@ -440,6 +440,13 @@
       background: #0c0404;
     }
 
+    .team-card.retired {
+      opacity: .45;
+      border-style: dotted;
+      border-color: #6b6b6b;
+      background: #0a0a0a;
+    }
+
     .team-title {
       font-family: var(--display);
       font-size: 30px;
@@ -456,6 +463,7 @@
     }
 
     .team-card.caught .team-title { text-decoration: line-through; }
+    .team-card.retired .team-title { text-decoration: line-through; color: #999; -webkit-text-stroke-color: #999; }
 
     .member-list {
       font-size: 16px;
@@ -490,6 +498,7 @@
     .status-hiding { background: rgba(255,122,0,.12); color: var(--hot); border: 2px solid var(--hot); }
     .status-pending { background: #3B2A0D; color: #FFB703; border: 2px solid #FFB703; }
     .status-caught { background: #3B0D11; color: #ff3a1a; border: 2px solid var(--blood); }
+    .status-retired { background: #1a1a1a; color: #aaa; border: 2px solid #6b6b6b; }
 
     .modal {
       display: none;
@@ -679,6 +688,7 @@
     }
     .recall-sub { font-size: 1.7rem; font-weight: 700; color: #fff; letter-spacing: 3px; line-height: 1.15; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
     .recall-note { margin-top: 16px; font-size: .95rem; color: #ffd0cc; letter-spacing: 2px; }
+    .recall-hint { margin-top: 14px; font-size: 1rem; color: #fff; letter-spacing: 2px; background: rgba(0,0,0,.45); padding: 10px 14px; border-radius: 12px; }
 
     .theme-hunter { border-color: var(--blood); box-shadow: 0 0 35px var(--scary-red-glow), 0 16px 40px rgba(0,0,0,.7); }
     .theme-hider { border-color: #29d46a; box-shadow: 0 0 35px rgba(41,212,106,.5), 0 16px 40px rgba(0,0,0,.7); }
@@ -693,6 +703,38 @@
 
     .credit { text-align: center; margin: 26px 0 4px; font-size: .85rem; letter-spacing: 3px; color: var(--amber-dim); text-transform: uppercase; }
     .credit strong { color: var(--amber); text-shadow: 0 0 8px rgba(255,122,0,.5); }
+
+    /* Waiting screen (registration closed) */
+    .wait-card { text-align: center; }
+    .wait-icon { font-size: 3.2rem; margin-bottom: 6px; }
+    .wait-title { font-size: 34px; color: var(--chipset-orange); margin-bottom: 10px; text-shadow: 0 0 14px rgba(255,122,0,.7), 0 2px 0 rgba(196,0,0,.6); }
+    .wait-sub { color: var(--text-muted); font-size: 1rem; line-height: 1.5; margin-bottom: 22px; }
+
+    /* Leaderboard */
+    .lb-card { border-color: #ffd700; }
+    .lb-row {
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      background: #100802;
+      border: 2px solid var(--amber-dim);
+      border-radius: 12px;
+    }
+    .lb-row.win {
+      background: linear-gradient(180deg, rgba(255,215,0,.22), rgba(255,215,0,.06));
+      border-color: #ffd700;
+      box-shadow: 0 0 20px rgba(255,215,0,.4);
+    }
+    .lb-rank { font-family: var(--display); font-size: 26px; color: var(--amber); text-align: center; }
+    .lb-row.win .lb-rank { color: #ffd700; }
+    .lb-name { font-size: 1.1rem; font-weight: 700; text-align: left; }
+    .lb-row.win .lb-name { color: #ffd700; }
+    .lb-note { display: block; font-size: .7rem; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; }
+    .lb-time { font-family: var(--display); font-size: 28px; color: var(--amber); letter-spacing: 1px; }
+    .lb-row.win .lb-time { color: #ffd700; }
 
     @keyframes flicker {
       0%,18%,22%,25%,53%,57%,100% { opacity: 1; }
@@ -794,11 +836,27 @@
 
     <header class="header">
       <div class="brand" aria-label="CHiPSET"><span>C</span><span>H</span><span class="i">i</span><span>P</span><span>S</span><span class="e">E</span><span>T</span></div>
-      <div class="sub-brand">NEXUS MALL • LIVE ARENA</div>
+      <div class="sub-brand">NEXUS MALL • LIVE GAME</div>
     </header>
 
-    <!-- STEP 1: USER REGISTRATION -->
-    <section id="stepRegister" class="card">
+    <!-- STEP 0: REGISTRATION CLOSED (default). Only the supervisor passcode is accessible. -->
+    <section id="stepWaiting" class="card wait-card">
+      <div class="wait-icon">🔒</div>
+      <h2 class="wait-title">REGISTRATION CLOSED</h2>
+      <p class="wait-sub">
+        Registration is currently closed.<br>
+        Please wait — the supervisor will open it shortly.<br>
+        This screen unlocks by itself.
+      </p>
+      <div class="form-group" style="text-align: left;">
+        <label>Supervisor Passcode</label>
+        <input type="password" id="inputWaitPasscode" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Supervisors only" />
+      </div>
+      <button class="btn btn-dark" onclick="verifyWaitPasscode()">🔐 SUPERVISOR LOGIN</button>
+    </section>
+
+    <!-- STEP 1: USER REGISTRATION (only shown while registration is open) -->
+    <section id="stepRegister" class="card hidden">
       <h2 style="color: var(--chipset-orange); margin-bottom: 16px; font-size: 34px; text-align: center; text-shadow: 0 0 14px rgba(255,122,0,.7), 0 2px 0 rgba(196,0,0,.6);">ENTER THE HUNT</h2>
       <div class="form-group">
         <label>Your Name</label>
@@ -816,7 +874,7 @@
         <label>Supervisor PIN (Optional)</label>
         <input type="password" id="inputSupervisorPin" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Supervisors only" />
       </div>
-      <button class="btn btn-orange" onclick="registerUser()">JOIN ARENA</button>
+      <button class="btn btn-orange" onclick="registerUser()">JOIN GAME</button>
     </section>
 
     <!-- KICKED SCREEN -->
@@ -862,10 +920,11 @@
             <strong id="userBatchDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
           </div>
           <div style="grid-column: span 2;">
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">ASSIGNED TEAM</span>
-            <strong id="userTeamDisplay" style="color: var(--hot); font-size: 1.2rem;">AWAITING TEAM ALLOCATION</strong>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">YOUR TEAM</span>
+            <strong id="userTeamDisplay" style="color: var(--hot); font-size: 1.2rem;">WAITING FOR TEAM</strong>
           </div>
         </div>
+        <button id="leaveBtn" class="btn btn-dark" onclick="leaveGame()" style="min-height: 52px; font-size: 16px; margin-top: 14px;">🚪 LEAVE GAME</button>
       </div>
 
       <!-- PERSISTENT SUPERVISOR CONTROLS (visible only to authorized supervisors) -->
@@ -874,9 +933,14 @@
           <h3 style="font-size: 26px; color: var(--chipset-orange);">SUPERVISOR CONTROLS</h3>
           <span class="status-badge status-hiding">ADMIN</span>
         </div>
-        <div class="admin-note">Passcode Verified • Supervisor Access Granted</div>
+        <div class="admin-note">Passcode Verified • Supervisor Access Granted • Not part of any team</div>
+        <div id="adminMatchTime" class="admin-note" style="color: var(--amber); font-size: 1.1rem; letter-spacing: 2px;"></div>
 
-        <button class="btn btn-orange" onclick="startNewGame()" style="margin-bottom: 4px;">
+        <div class="admin-label">REGISTRATION</div>
+        <div id="regStatusText" class="admin-note" style="margin-top: 6px;"></div>
+        <button id="regToggleBtn" class="btn btn-green" onclick="toggleRegistration()" style="margin-top: 6px;">🔓 OPEN REGISTRATION</button>
+
+        <button class="btn btn-orange" onclick="startNewGame()" style="margin-top: 18px; margin-bottom: 4px;">
           ⚡ START GAME (ASSIGN ROLES)
         </button>
 
@@ -887,6 +951,13 @@
           <button class="btn btn-dark" onclick="timerAdd5()">➕ +5 MINS</button>
           <button class="btn btn-dark" onclick="timerReset()">⟲ RESET</button>
         </div>
+
+        <div class="admin-label">PHASE OVERRIDES (REVEAL • MEETUP • HIDING)</div>
+        <div class="grid2">
+          <button class="btn btn-dark" onclick="timerReduce(10000)">➖ −10 SEC</button>
+          <button class="btn btn-dark" onclick="timerReduce(30000)">➖ −30 SEC</button>
+        </div>
+        <button id="skipPhaseBtn" class="btn btn-orange" onclick="skipPhase()" style="margin-top: 10px; min-height: 56px; font-size: 16px;">⏭ INSTANT START / SKIP</button>
 
         <div id="earlyHuntBox" class="hidden">
           <div class="admin-label">EARLY HUNT INITIATION</div>
@@ -919,7 +990,7 @@
         </div>
 
         <button class="btn btn-siren" onclick="triggerRecall()" style="margin-top: 22px;">
-          🚨 EMERGENCY RECALL SIREN
+          🚨 EMERGENCY FREEZE SIREN
         </button>
         <button class="btn btn-red" onclick="resetGame()" style="margin-top: 14px;">
           ⚠️ RESET ENTIRE GAME (RE-REGISTER ALL)
@@ -938,6 +1009,13 @@
       <!-- GAME RESULT BANNER -->
       <div id="resultBanner" class="card result-banner hidden"></div>
 
+      <!-- FINAL LEADERBOARD -->
+      <div id="leaderboardCard" class="card lb-card hidden">
+        <h3 style="font-size: 28px; color: #ffd700; text-align: center; margin-bottom: 4px;">🏁 FINAL LEADERBOARD</h3>
+        <div style="text-align: center; font-size: 0.8rem; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 14px;">RANKED BY SURVIVAL TIME (MM:SS)</div>
+        <div id="leaderboardList"></div>
+      </div>
+
       <!-- TIMER DISPLAY -->
       <div id="timerCard" class="card hidden" style="text-align: center;">
         <div id="timerLabel" style="font-size: 0.85rem; letter-spacing: 3px; color: var(--text-muted);">TIME REMAINING</div>
@@ -948,12 +1026,13 @@
       <!-- TEAMS / PLAYERS DISPLAY -->
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 28px; color: var(--chipset-orange);">ARENA STATUS</h3>
-          <span id="playerCountBadge" style="font-size: 0.8rem; color: var(--text-muted);">0 Joined</span>
+          <h3 style="font-size: 28px; color: var(--chipset-orange);">GAME STATUS</h3>
+          <span id="playerCountBadge" style="font-size: 0.8rem; color: var(--text-muted);">0 Players</span>
         </div>
 
         <div id="lobbyView" style="color: var(--text-muted); font-size: 0.9rem;">
-          <p>Waiting for supervisor to initiate the hunt...</p>
+          <div style="font-size: 0.8rem; letter-spacing: 2px; color: var(--hot);">LOBBY • PLAYERS</div>
+          <p style="margin-top: 6px;">Waiting for the supervisor to start the game...</p>
           <div id="lobbyPlayerList" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
         </div>
 
@@ -995,6 +1074,16 @@
     </div>
   </div>
 
+  <!-- TAG CONFIRMATION MODAL (Converted-Hunter catches: shown to the tagged hider squad) -->
+  <div id="tagModal" class="modal" style="z-index: 1100;">
+    <div class="modal-content" style="border-color: var(--blood); box-shadow: 0 0 35px var(--scary-red-glow);">
+      <h3 style="color: #ff3a1a; margin-bottom: 12px; font-size: 32px;">🎯 YOUR SQUAD WAS TAGGED</h3>
+      <div id="tagModalBody" style="color: var(--amber); font-size: 1.1rem; line-height: 1.4; margin-bottom: 8px;"></div>
+      <button class="btn btn-red" onclick="confirmTagged()">✅ YES — WE WERE CAUGHT</button>
+      <button class="btn btn-dark" onclick="disputeTag()">✕ NO — NOT CAUGHT</button>
+    </div>
+  </div>
+
   <!-- SUPERVISOR PASSCODE MODAL -->
   <div id="supervisorModal" class="modal">
     <div class="modal-content">
@@ -1011,14 +1100,15 @@
     </div>
   </div>
 
-  <!-- EMERGENCY RECALL OVERRIDE -->
+  <!-- EMERGENCY FREEZE OVERRIDE -->
   <div id="recallOverlay" class="recall-overlay hidden">
     <div class="recall-inner">
       <div class="recall-icon">🚨</div>
       <div class="recall-title">FREEZE</div>
       <div class="recall-sub">RETURN TO BASE IMMEDIATELY</div>
-      <div class="recall-note">EMERGENCY RECALL ISSUED BY SUPERVISOR</div>
-      <button id="recallEndBtn" class="btn btn-dark hidden" onclick="endRecall()" style="background:#fff; color:#7a0000; border-color:#fff;">✅ ALL CLEAR — END RECALL</button>
+      <div class="recall-note">EMERGENCY FREEZE ISSUED BY SUPERVISOR</div>
+      <div id="recallSoundHint" class="recall-hint hidden">🔇 TAP THE SCREEN TO TURN THE SIREN ON</div>
+      <button id="recallEndBtn" class="btn btn-dark hidden" onclick="endRecall()" style="background:#fff; color:#7a0000; border-color:#fff;">✅ ALL CLEAR — END FREEZE</button>
     </div>
   </div>
 
@@ -1031,16 +1121,26 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Simple, easy-to-shout squad names (assigned in order)
     const TEAM_NAMES = [
-      "PHANTOM SPECTRES", "SHADOW VENOM", "VOID RUNNERS", "CYBER REAPERS",
-      "NIGHT STALKERS", "OBSIDIAN VIPERS", "DARK PROTOCOL", "BLOODHUNTERS"
+      "Squad Alpha", "Squad Bravo", "Team Red", "Team Blue",
+      "Squad Falcon", "Team Green", "Squad Delta", "Team Orange",
+      "Squad Eagle", "Team Purple", "Squad Echo", "Team Yellow",
+      "Squad Wolf", "Squad Tiger"
     ];
+
+    function teamNameFor(i) {
+      const base = TEAM_NAMES[i % TEAM_NAMES.length];
+      const round = Math.floor(i / TEAM_NAMES.length);
+      return round ? `${base} ${round + 1}` : base;
+    }
 
     const SUPERVISOR_PASSCODE = '1121';
     const PHASE = { REVEAL: 10 * 1000, MEETUP: 2 * 60 * 1000, HIDING: 10 * 60 * 1000 };
     const FIVE_MIN = 5 * 60 * 1000;
     const UNDO_MS = 10 * 1000;
     const TEAM_SIZE = 3;
+    const BASE_TITLE = document.title;
 
     function defaultState() {
       return {
@@ -1056,7 +1156,11 @@
         epoch: 0,
         recall: null,
         lastElimination: null,
-        huntStartedAt: null
+        huntStartedAt: null,
+        registrationOpen: false, // registration is locked by default
+        phaseVersion: 0,         // bumped on every phase change (race-condition guard)
+        gameEndedAt: null,
+        supervisorNames: []
       };
     }
 
@@ -1065,6 +1169,7 @@
       if (!Array.isArray(st.players)) st.players = [];
       if (!Array.isArray(st.seekers)) st.seekers = [];
       if (!Array.isArray(st.teams)) st.teams = [];
+      if (!Array.isArray(st.supervisorNames)) st.supervisorNames = [];
       return st;
     }
 
@@ -1092,6 +1197,10 @@
     let sirenOn = false;
     let wakeLock = null;
     let noticeTimer = null;
+    let storedPhaseVersion = undefined; // raw phaseVersion as last read from the DB
+    let finalizing = false;
+    let lastFinalizeTry = 0;
+    let tagModalOpen = false;
 
     // ==========================================
     // HELPERS
@@ -1108,6 +1217,11 @@
 
     function isSupervisor() {
       return supervisorAuth || !!(localPlayer && localPlayer.isSupervisor);
+    }
+
+    function fmtMS(ms) {
+      const total = Math.max(0, Math.floor(ms / 1000));
+      return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
     }
 
     // Helper to format names with VIP President Badge
@@ -1167,7 +1281,7 @@
             master.gain.value = 0.9;
             master.connect(ctx.destination);
           }
-          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+          if (ctx.state === 'suspended' || ctx.state === 'interrupted') ctx.resume().catch(() => {});
         } catch (e) { return null; }
         return ctx;
       }
@@ -1213,34 +1327,60 @@
         [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.16, 0.5, 'triangle', 0.4));
       }
 
-      // Continuous emergency siren (wailing)
+      // Continuous emergency siren — maximum gain on dedicated gain nodes.
+      // Idempotent: if it is already running it only makes sure the context is resumed.
       function startSiren() {
         const c = ensure();
-        if (!c || siren) return;
-        const o = c.createOscillator();
-        const g = c.createGain();
-        const lfo = c.createOscillator();
-        const lg = c.createGain();
-        o.type = 'sawtooth';
-        o.frequency.value = 950;
-        lfo.type = 'sine';
-        lfo.frequency.value = 1.1;
-        lg.gain.value = 380;
-        lfo.connect(lg);
-        lg.connect(o.frequency);
-        g.gain.value = 0.5;
-        o.connect(g);
-        g.connect(master);
-        o.start();
-        lfo.start();
-        siren = { o, lfo, g };
+        if (!c) return;
+        if (siren) {
+          if (c.state !== 'running') c.resume().catch(() => {});
+          return;
+        }
+        try {
+          master.gain.cancelScheduledValues(c.currentTime);
+          master.gain.setValueAtTime(1.0, c.currentTime); // master to max while the siren runs
+
+          const o1 = c.createOscillator();
+          const o2 = c.createOscillator();
+          const g1 = c.createGain();
+          const g2 = c.createGain();
+          const sirenGain = c.createGain();
+          const comp = c.createDynamicsCompressor(); // keeps the max-volume mix from clipping
+          const lfo = c.createOscillator();
+          const lg1 = c.createGain();
+          const lg2 = c.createGain();
+
+          o1.type = 'sawtooth';
+          o1.frequency.value = 950;
+          o2.type = 'square';
+          o2.frequency.value = 1425; // fifth above — harsher, cuts through noise
+          lfo.type = 'sine';
+          lfo.frequency.value = 1.1;
+          lg1.gain.value = 380;
+          lg2.gain.value = 570;
+          lfo.connect(lg1); lg1.connect(o1.frequency);
+          lfo.connect(lg2); lg2.connect(o2.frequency);
+
+          g1.gain.value = 0.75;
+          g2.gain.value = 0.45;
+          sirenGain.gain.value = 1.0; // maximum gain
+
+          o1.connect(g1); o2.connect(g2);
+          g1.connect(sirenGain); g2.connect(sirenGain);
+          sirenGain.connect(comp);
+          comp.connect(master);
+
+          o1.start(); o2.start(); lfo.start();
+          siren = { o1, o2, lfo, nodes: [g1, g2, sirenGain, comp, lg1, lg2] };
+        } catch (e) { siren = null; }
       }
 
       function stopSiren() {
         if (!siren) return;
-        try { siren.o.stop(); siren.lfo.stop(); } catch (e) {}
-        try { siren.g.disconnect(); } catch (e) {}
+        try { siren.o1.stop(); siren.o2.stop(); siren.lfo.stop(); } catch (e) {}
+        try { siren.nodes.forEach(n => n.disconnect()); } catch (e) {}
         siren = null;
+        try { if (master && ctx) master.gain.setValueAtTime(0.9, ctx.currentTime); } catch (e) {}
       }
 
       function stateName() { return ctx ? ctx.state : 'none'; }
@@ -1249,7 +1389,9 @@
     })();
 
     function updateSoundPill() {
-      el('soundPill').classList.toggle('hidden', SFX.state() === 'running');
+      const running = SFX.state() === 'running';
+      el('soundPill').classList.toggle('hidden', running);
+      el('recallSoundHint').classList.toggle('hidden', running);
     }
 
     function unlockAudio() {
@@ -1304,6 +1446,7 @@
         if (error) return false;
         if (data && data.state_data) {
           state = normalizeState(data.state_data);
+          storedPhaseVersion = data.state_data.phaseVersion;
           return true;
         }
       } catch (e) {}
@@ -1335,20 +1478,25 @@
     }
 
     async function initApp() {
-      if (localPlayer) {
-        el('stepRegister').classList.add('hidden');
-        el('stepDashboard').classList.remove('hidden');
-        renderCachedSession();
-      }
+      renderGate();
+      if (localPlayer) renderCachedSession();
 
       ['pointerdown', 'touchstart', 'keydown', 'click'].forEach(ev =>
         document.addEventListener(ev, unlockAudio, { passive: true }));
 
-      document.addEventListener('visibilitychange', () => {
+      // Siren resilience: when the tab/phone comes back to the foreground, resume audio + alert immediately
+      document.addEventListener('visibilitychange', async () => {
         if (document.visibilityState === 'visible') {
           wakeLock = null;
           requestWakeLock();
-          pollState();
+          SFX.ensure();
+          if (state.recall && state.recall.active) {
+            syncRecall();
+            vibrate([500, 200, 500, 200, 500]);
+          }
+          await pollState();
+          if (state.recall && state.recall.active) syncRecall();
+          updateSoundPill();
         }
       });
       window.addEventListener('online', () => { renderConn(); pollState(); });
@@ -1366,6 +1514,7 @@
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_room' }, payload => {
           if (payload.new && payload.new.state_data) {
             state = normalizeState(payload.new.state_data);
+            storedPhaseVersion = payload.new.state_data.phaseVersion;
             verifyLocalPlayerRegistration();
             updateUI();
           }
@@ -1383,17 +1532,48 @@
       setInterval(pollState, 8000);
     }
 
+    // Decides which top-level screen is visible: waiting / register / kicked / dashboard
+    function renderGate() {
+      const kicked = !el('stepKicked').classList.contains('hidden');
+      if (kicked) {
+        el('stepWaiting').classList.add('hidden');
+        el('stepRegister').classList.add('hidden');
+        el('stepDashboard').classList.add('hidden');
+        return;
+      }
+      if (!localPlayer && supervisorAuth) {
+        localPlayer = makeSupervisorPlayer();
+        try { localStorage.setItem('chipset_player', JSON.stringify(localPlayer)); } catch (e) {}
+      }
+      if (localPlayer) {
+        el('stepWaiting').classList.add('hidden');
+        el('stepRegister').classList.add('hidden');
+        el('stepDashboard').classList.remove('hidden');
+      } else {
+        el('stepDashboard').classList.add('hidden');
+        const open = !!state.registrationOpen;
+        el('stepRegister').classList.toggle('hidden', !open);
+        el('stepWaiting').classList.toggle('hidden', open);
+      }
+    }
+
+    function makeSupervisorPlayer() {
+      return { id: 'sup_' + Date.now(), name: 'Supervisor', batch: '—', epoch: state.epoch || 0, isSupervisor: true };
+    }
+
     function forceLogout() {
       localStorage.removeItem('chipset_player');
       localStorage.removeItem('chipset_supervisor');
       localStorage.removeItem('chipset_session');
       localPlayer = null;
       supervisorAuth = false;
-      el('stepDashboard').classList.add('hidden');
-      el('stepRegister').classList.remove('hidden');
       localAlertsShown.hunterStart = false;
       localAlertsShown.eliminatedTeams.clear();
       localAlertsShown.resultKey = null;
+      el('tagModal').classList.remove('active');
+      el('revealModal').classList.remove('active');
+      tagModalOpen = false;
+      renderGate();
     }
 
     function verifyLocalPlayerRegistration() {
@@ -1404,19 +1584,33 @@
       if (epochMismatch || emptyLobby) forceLogout();
     }
 
-    async function syncToSupabase() {
+    // guardPhase: only write if no other client has changed phaseVersion since we read it.
+    // Returns true | false | 'conflict'
+    async function syncToSupabase(guardPhase) {
       try {
-        const { error } = await supabaseClient
+        let q = supabaseClient
           .from('game_room')
           .update({ state_data: state, updated_at: new Date() })
           .eq('id', 1);
-        if (error) { console.error(error); return false; }
+        if (guardPhase) {
+          const col = 'state_data->>phaseVersion';
+          q = (storedPhaseVersion === undefined || storedPhaseVersion === null)
+            ? q.is(col, null)
+            : q.eq(col, String(storedPhaseVersion));
+          const { data, error } = await q.select('id');
+          if (error) { console.error(error); return false; }
+          if (!data || !data.length) return 'conflict';
+        } else {
+          const { error } = await q;
+          if (error) { console.error(error); return false; }
+        }
+        storedPhaseVersion = state.phaseVersion;
         return true;
       } catch (e) { console.error(e); return false; }
     }
 
     // Fetch-latest -> apply change -> write. Returns 'ok' | 'skip' | 'err'.
-    async function mutate(fn) {
+    async function mutate(fn, opts) {
       mutating++;
       try {
         if (!(await refreshState())) {
@@ -1425,7 +1619,14 @@
         }
         const changed = fn(state);
         if (changed === false) { updateUI(); return 'skip'; }
-        if (!(await syncToSupabase())) {
+        const sync = await syncToSupabase(opts && opts.guardPhase);
+        if (sync === 'conflict') {
+          // Another client already advanced the phase — discard our attempt and take the winner's state
+          await refreshState();
+          updateUI();
+          return 'skip';
+        }
+        if (!sync) {
           showNotice('⚠ Sync failed — check connection');
           return 'err';
         }
@@ -1446,6 +1647,11 @@
       return t.status === 'CAUGHT' && Date.now() >= (t.undoUntil || 0);
     }
 
+    // A squad is "active" while it is neither caught nor retired (all members left)
+    function isActiveTeam(t) {
+      return t.status !== 'CAUGHT' && !t.retired;
+    }
+
     function getHunterNames() {
       const names = [...state.seekers];
       state.teams.forEach(t => {
@@ -1462,16 +1668,24 @@
       return !!(localPlayer && !localPlayer.isSupervisor && getHunterNames().some(n => sameName(n, localPlayer.name)));
     }
 
+    // Original (OG) hunter = picked as a hunter at game start
+    function isLocalOGHunter() {
+      return !!(localPlayer && !localPlayer.isSupervisor && state.seekers.some(n => sameName(n, localPlayer.name)));
+    }
+
     function findUserTeam() {
       if (!localPlayer) return null;
       return state.teams.find(t => t.members.some(m => sameName(m.name, localPlayer.name))) || null;
     }
 
+    // Win conditions (only evaluated once the hunt is live):
+    //  - exactly one active hiding squad left (or the match started with just one) -> that squad wins
+    //  - no active hiding squads left -> hunters win
+    // Waits while a supervisor-approved catch is still inside its undo window.
     function getGameResult() {
       if (state.status !== 'HUNTING' || !state.teams.length) return null;
-      if (!state.teams.some(isFinalized)) return null;
       if (state.teams.some(t => t.status === 'CAUGHT' && !isFinalized(t))) return null;
-      const remaining = state.teams.filter(t => t.status !== 'CAUGHT');
+      const remaining = state.teams.filter(isActiveTeam);
       if (remaining.length === 0) return { type: 'HUNTERS' };
       if (remaining.length === 1 && remaining[0].status === 'HIDING') return { type: 'TEAM', team: remaining[0] };
       return null;
@@ -1482,7 +1696,7 @@
     }
 
     function activeTeams() {
-      return state.teams.filter(t => t.status !== 'CAUGHT');
+      return state.teams.filter(isActiveTeam);
     }
 
     function allSquadsHidden() {
@@ -1490,9 +1704,73 @@
       return a.length > 0 && a.every(t => t.hidden);
     }
 
+    // Time at which the match ended (last catch / last squad retirement), never before the hunt start
+    function computeEndMs(s) {
+      const start = s.huntStartedAt || Date.now();
+      let end = 0;
+      s.teams.forEach(t => {
+        if (t.status === 'CAUGHT' && t.caughtAt) end = Math.max(end, t.caughtAt);
+        if (t.retired && t.retiredAt) end = Math.max(end, t.retiredAt);
+      });
+      return Math.max(end || Date.now(), start);
+    }
+
+    function matchEndMs() {
+      if (state.gameEndedAt) return state.gameEndedAt;
+      if (getGameResult()) return computeEndMs(state);
+      return Date.now();
+    }
+
+    function matchElapsedMs() {
+      if (!state.huntStartedAt) return 0;
+      return Math.max(0, matchEndMs() - state.huntStartedAt);
+    }
+
+    // Leaderboard rows: winner first, then everyone else by survival time (longest first)
+    function getStandings() {
+      const r = getGameResult();
+      const endMs = matchEndMs();
+      const start = state.huntStartedAt || endMs;
+      const rows = state.teams.map(t => {
+        const won = !!(r && r.type === 'TEAM' && r.team.id === t.id);
+        let ms;
+        if (t.survivalMs != null) ms = t.survivalMs;
+        else if (t.retired) ms = 0;
+        else ms = Math.max(0, endMs - start);
+        return { team: t, ms, won, left: !!t.retired && t.status !== 'CAUGHT' };
+      });
+      rows.sort((a, b) => ((b.won ? 1 : 0) - (a.won ? 1 : 0)) || (b.ms - a.ms));
+      return rows;
+    }
+
     function uiSig() {
-      return state.status + '|' + (getGameResult() ? 'R' : '') + '|' +
-        state.teams.map(t => t.id + ':' + t.status + ':' + (isFinalized(t) ? 1 : 0) + (t.hidden ? 'h' : '')).join(',');
+      return state.status + '|' + (getGameResult() ? 'R' : '') + '|' + (state.registrationOpen ? 'O' : 'C') + '|' +
+        state.teams.map(t => t.id + ':' + t.status + ':' + (isFinalized(t) ? 1 : 0) + (t.hidden ? 'h' : '') + (t.retired ? 'x' : '')).join(',');
+    }
+
+    // Remove a player everywhere (roster, hunters, squads). Squads left with no members are retired.
+    function removePlayerFromGame(s, name) {
+      const now = Date.now();
+      s.players = s.players.filter(p => !sameName(p.name, name));
+      s.seekers = s.seekers.filter(n => !sameName(n, name));
+      s.teams.forEach(t => {
+        const before = t.members.length;
+        if (!before) return;
+        t.members = t.members.filter(m => !sameName(m.name, name));
+        if (t.members.length === 0 && !t.retired) retireTeam(s, t, now);
+      });
+    }
+
+    function retireTeam(s, t, now) {
+      t.retired = true;
+      t.retiredAt = now;
+      if (t.status !== 'CAUGHT' && t.survivalMs == null) {
+        t.survivalMs = s.huntStartedAt ? Math.max(0, now - s.huntStartedAt) : 0;
+      }
+      if (t.status === 'PENDING') {
+        t.status = 'HIDING';
+        delete t.claimedBy; delete t.claimType; delete t.claimedBySquad;
+      }
     }
 
     // ==========================================
@@ -1524,19 +1802,26 @@
       const player = { id: 'p_' + Date.now(), name, batch, epoch: state.epoch || 0 };
 
       if (asSupervisor) {
-        // Supervisors bypass the roster entirely — never added to players.
+        // Supervisors bypass the roster entirely — never added to players, squads or hunter pools.
         player.isSupervisor = true;
       } else {
+        let closed = false;
         const res = await mutate(s => {
           player.epoch = s.epoch || 0;
+          if (!s.registrationOpen) { closed = true; return false; }
           if (!s.players.some(p => sameName(p.name, name))) {
             s.players.push(player);
             return true;
           }
           return false;
         });
+        if (closed) {
+          alert("Registration is currently closed.");
+          renderGate();
+          return;
+        }
         if (res === 'err') {
-          alert("Could not join the arena — check your connection and try again.");
+          alert("Could not join the game — check your connection and try again.");
           return;
         }
       }
@@ -1544,8 +1829,6 @@
       localPlayer = player;
       localStorage.setItem('chipset_player', JSON.stringify(localPlayer));
 
-      el('stepRegister').classList.add('hidden');
-      el('stepDashboard').classList.remove('hidden');
       markInitialSeen();
       updateUI();
       requestWakeLock();
@@ -1561,25 +1844,96 @@
       const team = state.teams.find(t => t.id === teamId);
       if (!team) return;
       const teamName = team.name;
+      const og = isLocalOGHunter();
+      const mySquad = findUserTeam();
       const res = await mutate(s => {
         const t = s.teams.find(x => x.id === teamId);
-        if (!t || t.status !== 'HIDING') return false;
+        if (!t || t.status !== 'HIDING' || t.retired) return false;
         t.status = 'PENDING';
         t.claimedBy = localPlayer.name;
+        t.claimedBySquad = mySquad ? mySquad.name : null;
+        // Case A (OG Hunter): supervisor approves.  Case B (converted hunter): tagged squad confirms.
+        t.claimType = og ? 'SUPERVISOR' : 'HIDER_CONFIRM';
         return true;
       });
-      if (res === 'ok') alert(`Catch claimed for ${teamName}! Awaiting supervisor approval.`);
+      if (res === 'ok') {
+        alert(og
+          ? `Catch claimed for ${teamName}! Awaiting supervisor approval.`
+          : `Tag sent to ${teamName}! They will be asked to confirm on their screen.`);
+      }
+    }
+
+    // Case B — tagged hider squad confirms: conversion processes instantly on trust
+    async function confirmTagged() {
+      const mine = findUserTeam();
+      if (!mine) return;
+      const teamId = mine.id;
+      el('tagModal').classList.remove('active');
+      tagModalOpen = false;
+      await mutate(s => {
+        const t = s.teams.find(x => x.id === teamId);
+        if (!t || t.status !== 'PENDING' || t.claimType !== 'HIDER_CONFIRM') return false;
+        const now = Date.now();
+        t.prevStatus = 'PENDING';
+        t.status = 'CAUGHT';
+        t.caughtAt = now;
+        t.undoUntil = now; // no supervisor undo window — final immediately
+        t.survivalMs = s.huntStartedAt ? Math.max(0, now - s.huntStartedAt) : 0;
+        s.lastEliminatedTeam = t.name;
+        return true;
+      });
+    }
+
+    async function disputeTag() {
+      const mine = findUserTeam();
+      if (!mine) return;
+      const teamId = mine.id;
+      el('tagModal').classList.remove('active');
+      tagModalOpen = false;
+      await mutate(s => {
+        const t = s.teams.find(x => x.id === teamId);
+        if (!t || t.status !== 'PENDING' || t.claimType !== 'HIDER_CONFIRM') return false;
+        t.status = 'HIDING';
+        delete t.claimedBy; delete t.claimType; delete t.claimedBySquad;
+        return true;
+      });
+      showNotice('Tag disputed — your squad is still in the game');
     }
 
     async function markHidden(teamId) {
       const res = await mutate(s => {
         const t = s.teams.find(x => x.id === teamId);
-        if (!t || s.status !== 'HIDING' || t.status !== 'HIDING' || t.hidden) return false;
+        if (!t || s.status !== 'HIDING' || t.status !== 'HIDING' || t.hidden || t.retired) return false;
         t.hidden = true;
         t.hiddenAt = Date.now();
         return true;
       });
       if (res === 'ok') showNotice('✅ Squad marked as hidden — hold your position!');
+    }
+
+    // Leave Game: confirm, disconnect, decrement squad count, retire squad if it is now empty
+    async function leaveGame() {
+      if (!localPlayer) return;
+      if (!confirm("Leave the game? You will be removed from your team.")) return;
+
+      if (localPlayer.isSupervisor) {
+        forceLogout();
+        updateUI();
+        return;
+      }
+
+      const name = localPlayer.name;
+      const res = await mutate(s => {
+        removePlayerFromGame(s, name);
+        return true;
+      });
+      if (res === 'err') {
+        alert("Could not leave the game — check your connection and try again.");
+        return;
+      }
+      forceLogout();
+      updateUI();
+      showNotice('👋 You left the game');
     }
 
     // ==========================================
@@ -1598,19 +1952,59 @@
       el('supervisorModal').classList.remove('active');
     }
 
-    function verifyPasscode() {
+    // Promote the current device to SUPERVISOR. Supervisors are removed from all player logic.
+    async function promoteToSupervisor() {
+      supervisorAuth = true;
+      localStorage.setItem('chipset_supervisor', '1');
+
+      if (!localPlayer) {
+        localPlayer = makeSupervisorPlayer();
+        markInitialSeen();
+      } else if (!localPlayer.isSupervisor) {
+        const name = localPlayer.name;
+        const res = await mutate(s => {
+          removePlayerFromGame(s, name); // out of roster, hunter pool and any squad
+          if (!Array.isArray(s.supervisorNames)) s.supervisorNames = [];
+          if (!s.supervisorNames.some(n => sameName(n, name))) s.supervisorNames.push(name);
+          return true;
+        });
+        if (res === 'err') {
+          supervisorAuth = false;
+          localStorage.removeItem('chipset_supervisor');
+          alert("Could not complete supervisor promotion — check your connection and try again.");
+          return false;
+        }
+        localPlayer.isSupervisor = true;
+      }
+      try { localStorage.setItem('chipset_player', JSON.stringify(localPlayer)); } catch (e) {}
+      updateUI();
+      return true;
+    }
+
+    async function verifyPasscode() {
       const code = el('inputPasscode').value;
       if (code === SUPERVISOR_PASSCODE) {
-        supervisorAuth = true;
-        localStorage.setItem('chipset_supervisor', '1');
         el('inputPasscode').value = '';
+        const ok = await promoteToSupervisor();
         closeSupervisorModal();
-        updateUI();
+        if (!ok) return;
         const p = el('adminPanel');
         if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
         alert("Incorrect Passcode!");
       }
+    }
+
+    // Passcode box on the "registration closed" waiting screen
+    async function verifyWaitPasscode() {
+      const code = el('inputWaitPasscode').value;
+      if (code !== SUPERVISOR_PASSCODE) {
+        alert("Incorrect Passcode!");
+        return;
+      }
+      el('inputWaitPasscode').value = '';
+      SFX.ensure();
+      await promoteToSupervisor();
     }
 
     function lockSupervisor() {
@@ -1624,19 +2018,52 @@
       updateUI();
     }
 
+    async function toggleRegistration() {
+      if (!isSupervisor()) return;
+      const res = await mutate(s => { s.registrationOpen = !s.registrationOpen; return true; });
+      if (res === 'ok') showNotice(state.registrationOpen ? '🔓 Registration is OPEN' : '🔒 Registration is CLOSED');
+    }
+
     function enterHunt(s) {
       s.status = 'HUNTING';
       s.timerEndTime = null;
       s.paused = false;
       s.pausedRemaining = null;
       s.huntStartedAt = Date.now();
+      s.gameEndedAt = null;
+    }
+
+    // Single place that moves the game forward one phase.
+    // Callers must run it inside mutate(..., {guardPhase:true}) so duplicate/stale requests cannot double-advance.
+    function applyAdvance(s, expected, force) {
+      if (s.status !== expected) return false;
+      if (!force) {
+        if (s.paused) return false;
+        if (!s.timerEndTime || s.timerEndTime > Date.now()) return false;
+      }
+      if (expected === 'REVEAL_COUNTDOWN') {
+        s.status = 'MEETUP';
+        s.timerEndTime = Date.now() + PHASE.MEETUP;
+      } else if (expected === 'MEETUP') {
+        s.status = 'HIDING';
+        s.timerEndTime = Date.now() + PHASE.HIDING;
+      } else if (expected === 'HIDING') {
+        enterHunt(s);
+      } else {
+        return false;
+      }
+      s.paused = false;
+      s.pausedRemaining = null;
+      s.phaseVersion = (s.phaseVersion || 0) + 1;
+      return true;
     }
 
     async function startNewGame() {
       if (!isSupervisor()) return;
       await refreshState();
 
-      const n = state.players.length;
+      const roster = state.players.filter(p => !state.supervisorNames.some(n => sameName(n, p.name)));
+      const n = roster.length;
       if (n < 2) {
         alert("Need at least 2 players to start (1 Hunter + 1 Hider)!");
         return;
@@ -1649,13 +2076,16 @@
       // Under-capacity override (guarded by explicit confirmation)
       const issues = [];
       if (n < 4) issues.push(`Only ${n} player(s) joined (minimum 4: 3 Hunters + Hiders)`);
-      if (teamCount < 2) issues.push(`Fewer than 2 hiding squads will be formed`);
+      if (teamCount < 2) issues.push(`Only one hiding squad will be formed — it wins as soon as the hunt starts`);
       if (issues.length && !confirm(`⚠️ UNDER CAPACITY\n\n• ${issues.join('\n• ')}\n\nStart the game anyway?`)) return;
 
-      if (state.status !== 'LOBBY' && !confirm("A game is already in progress. Restart with a fresh role assignment?")) return;
+      if (state.status !== 'LOBBY' && !getGameResult() && !confirm("A game is already in progress. Restart with a fresh role assignment?")) return;
 
       await mutate(s => {
-        let shuffled = [...s.players].sort(() => Math.random() - 0.5);
+        // Supervisors are never part of the roster
+        let shuffled = s.players
+          .filter(p => !s.supervisorNames.some(n => sameName(n, p.name)))
+          .sort(() => Math.random() - 0.5);
 
         const sc = shuffled.length >= 4 ? 3 : Math.max(1, shuffled.length - 1);
         const seekerObjs = shuffled.slice(0, sc);
@@ -1688,10 +2118,9 @@
           const size = base + (i < extra ? 1 : 0);
           const teamMembers = mixedHiders.slice(cursor, cursor + size);
           cursor += size;
-          const tName = TEAM_NAMES[i % TEAM_NAMES.length] + " " + (Math.floor(i / TEAM_NAMES.length) + 1);
           s.teams.push({
-            id: 't_' + stamp + '_' + i,
-            name: tName,
+            id: 'sq' + (i + 1),
+            name: teamNameFor(i),
             members: teamMembers,
             status: 'HIDING',
             hidden: false
@@ -1707,6 +2136,9 @@
         s.lastEliminatedTeam = null;
         s.lastElimination = null;
         s.huntStartedAt = null;
+        s.gameEndedAt = null;
+        s.registrationOpen = false; // game is on — lock the door to late joiners
+        s.phaseVersion = (s.phaseVersion || 0) + 1;
         return true;
       });
 
@@ -1717,6 +2149,7 @@
       closeSupervisorModal();
     }
 
+    // Case A — OG hunter catches go through the supervisor
     async function approveCatch(teamId) {
       if (!isSupervisor()) return;
       await mutate(s => {
@@ -1726,6 +2159,7 @@
         team.prevStatus = team.status;
         team.status = 'CAUGHT';
         team.caughtAt = now;
+        team.survivalMs = s.huntStartedAt ? Math.max(0, now - s.huntStartedAt) : 0; // survival time log
         team.undoUntil = now + UNDO_MS; // grace window before elimination is final
         s.lastEliminatedTeam = team.name;
         s.lastElimination = { teamId: team.id, name: team.name, until: now + UNDO_MS, prevStatus: 'PENDING' };
@@ -1739,7 +2173,7 @@
         const team = s.teams.find(t => t.id === teamId);
         if (!team || team.status !== 'PENDING') return false;
         team.status = 'HIDING';
-        delete team.claimedBy;
+        delete team.claimedBy; delete team.claimType; delete team.claimedBySquad;
         return true;
       });
     }
@@ -1755,6 +2189,7 @@
         delete t.caughtAt;
         delete t.undoUntil;
         delete t.prevStatus;
+        delete t.survivalMs;
         s.lastEliminatedTeam = null;
         s.lastElimination = null;
         return true;
@@ -1779,6 +2214,9 @@
           s.gameId = null;
           s.recall = null;
           s.huntStartedAt = null;
+          s.gameEndedAt = null;
+          s.registrationOpen = false; // back to the locked default
+          s.phaseVersion = (s.phaseVersion || 0) + 1;
           s.epoch = (s.epoch || 0) + 1;
           return true;
         });
@@ -1840,6 +2278,32 @@
       else if (res === 'ok') showNotice('➕ 5 minutes added');
     }
 
+    // Reduce the live countdown (reveal / meetup / hiding) on the fly
+    async function timerReduce(ms) {
+      if (!isSupervisor()) return;
+      const res = await mutate(s => {
+        if (!['REVEAL_COUNTDOWN', 'MEETUP', 'HIDING'].includes(s.status)) return false;
+        if (s.paused) { s.pausedRemaining = Math.max(0, (s.pausedRemaining || 0) - ms); return true; }
+        if (s.timerEndTime) { s.timerEndTime = Math.max(Date.now(), s.timerEndTime - ms); return true; }
+        return false;
+      });
+      if (res === 'skip') showNotice('No active countdown to reduce');
+      else if (res === 'ok') showNotice(`➖ ${Math.round(ms / 1000)} seconds removed`);
+    }
+
+    // Instant Start / Skip: jump straight to the next phase
+    async function skipPhase() {
+      if (!isSupervisor()) return;
+      const expected = state.status;
+      if (!['REVEAL_COUNTDOWN', 'MEETUP', 'HIDING'].includes(expected)) {
+        showNotice('No countdown phase to skip');
+        return;
+      }
+      if (expected === 'HIDING' && !confirm("Skip the hiding phase and release the Hunters NOW?")) return;
+      const res = await mutate(s => applyAdvance(s, expected, true), { guardPhase: true });
+      if (res === 'skip') showNotice('Phase already changed');
+    }
+
     async function timerReset() {
       if (!isSupervisor()) return;
       if (!['REVEAL_COUNTDOWN', 'MEETUP', 'HIDING'].includes(state.status)) {
@@ -1868,17 +2332,17 @@
       if (!confirm("All squads are hidden. Begin the hunt NOW and skip the rest of the hiding timer?")) return;
       await mutate(s => {
         if (s.status !== 'HIDING') return false;
-        const a = s.teams.filter(t => t.status !== 'CAUGHT');
+        const a = s.teams.filter(isActiveTeam);
         if (!a.length || !a.every(t => t.hidden)) return false;
-        enterHunt(s);
-        return true;
-      });
+        return applyAdvance(s, 'HIDING', true);
+      }, { guardPhase: true });
     }
 
-    // ---------- Emergency Recall ----------
+    // ---------- Emergency Freeze ----------
     async function triggerRecall() {
       if (!isSupervisor()) return;
-      if (!confirm("🚨 ISSUE EMERGENCY RECALL?\n\nThis flashes a red FREEZE / RETURN TO BASE override and sounds a siren on EVERY connected device.")) return;
+      if (!confirm("🚨 ISSUE EMERGENCY FREEZE?\n\nThis flashes a red FREEZE / RETURN TO BASE override and sounds a siren on EVERY connected device.")) return;
+      SFX.ensure();
       await mutate(s => {
         s.recall = { active: true, at: Date.now(), by: localPlayer ? localPlayer.name : 'SUPERVISOR' };
         return true;
@@ -1900,11 +2364,22 @@
           sirenOn = true;
           vibrate([500, 200, 500, 200, 500]);
         }
-        SFX.startSiren(); // no-op if already running
+        SFX.startSiren(); // idempotent; also resumes a suspended audio context
+        updateSoundPill();
       } else if (sirenOn || !ov.classList.contains('hidden')) {
         ov.classList.add('hidden');
         SFX.stopSiren();
         sirenOn = false;
+        document.title = BASE_TITLE;
+      }
+    }
+
+    // Flash the tab title so a hidden/background tab still draws attention during a freeze
+    function flashTitle() {
+      if (state.recall && state.recall.active) {
+        document.title = (Math.floor(Date.now() / 1000) % 2) ? '🚨 FREEZE! RETURN TO BASE' : BASE_TITLE;
+      } else if (document.title !== BASE_TITLE) {
+        document.title = BASE_TITLE;
       }
     }
 
@@ -1914,7 +2389,7 @@
     function applyDossier(roleKey, teamText) {
       const map = {
         SUPERVISOR: ['status-hiding', '🔐 SUPERVISOR'],
-        LOBBY: ['status-pending', 'WAITING IN LOBBY'],
+        LOBBY: ['status-pending', 'LOBBY'],
         REVEAL: ['status-pending', 'REVEALING ROLES...'],
         HUNTER: ['status-caught', '☠ HUNTER'],
         HIDER: ['status-hiding', '🏃 HIDER']
@@ -1936,6 +2411,8 @@
         localAlertsShown.gameId = state.gameId;
       }
 
+      renderGate();
+
       const sup = isSupervisor();
       el('adminPanel').classList.toggle('hidden', !sup);
       el('supervisorAccessBtn').classList.toggle('hidden', sup);
@@ -1948,22 +2425,22 @@
         let roleKey, teamText;
         if (localPlayer.isSupervisor) {
           roleKey = 'SUPERVISOR';
-          teamText = 'ADMIN • NOT IN ROSTER';
+          teamText = 'SUPERVISOR • NOT ON ANY TEAM';
         } else {
           const isHunter = isLocalHunter();
           const userTeam = findUserTeam();
           if (state.status === 'LOBBY') {
             roleKey = 'LOBBY';
-            teamText = 'AWAITING TEAM ALLOCATION';
+            teamText = 'WAITING FOR TEAM';
           } else if (state.status === 'REVEAL_COUNTDOWN') {
             roleKey = 'REVEAL';
-            teamText = 'CALCULATING TEAM ASSIGNMENTS...';
+            teamText = 'PICKING TEAMS...';
           } else if (isHunter) {
             roleKey = 'HUNTER';
-            teamText = (userTeam && isFinalized(userTeam)) ? `${userTeam.name} (HUNTER CONVERTED)` : 'INITIAL HUNTER';
+            teamText = (userTeam && isFinalized(userTeam)) ? `${userTeam.name} (HUNTER CONVERTED)` : 'ORIGINAL HUNTER';
           } else {
             roleKey = 'HIDER';
-            teamText = userTeam ? userTeam.name : 'UNASSIGNED HIDER';
+            teamText = userTeam ? userTeam.name : 'NO TEAM';
           }
         }
         applyDossier(roleKey, teamText);
@@ -1986,11 +2463,11 @@
         `<span class="badge-batch">${esc(p.name)} ${getVIPBadgeHTML(p.name)} (${esc(p.batch)})</span>`
       ).join('');
 
-      el('playerCountBadge').innerText = `${state.players.length} Joined`;
+      el('playerCountBadge').innerText = `${state.players.length} Players`;
 
       const hunterBox = el('hunterNamesList');
       if (state.seekers.length === 0 || state.status === 'REVEAL_COUNTDOWN') {
-        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">ROLES CLASSIFIED</span>`;
+        hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">ROLES HIDDEN</span>`;
       } else {
         hunterBox.innerHTML = getHunterNames().map(name => `<span class="hunter-pill">💀 ${esc(name)} ${getVIPBadgeHTML(name)}</span>`).join('');
       }
@@ -2009,8 +2486,10 @@
       renderPendingApprovals();
       renderAdmin();
       renderResult();
+      renderLeaderboard();
       renderUndoToast();
       renderRejoinApprovals();
+      renderTagConfirm();
       syncRecall();
 
       checkIfKicked();
@@ -2022,7 +2501,25 @@
         checkWinner();
       }
 
+      if (getGameResult() && !state.gameEndedAt) maybeFinalizeGame();
+
       lastSig = uiSig();
+    }
+
+    // Record the official game-end time once (used for the winner's survival time)
+    async function maybeFinalizeGame() {
+      if (finalizing || Date.now() - lastFinalizeTry < 4000) return;
+      finalizing = true;
+      lastFinalizeTry = Date.now();
+      try {
+        await mutate(s => {
+          if (s.gameEndedAt || !getGameResult()) return false;
+          s.gameEndedAt = computeEndMs(s);
+          return true;
+        });
+      } finally {
+        finalizing = false;
+      }
     }
 
     // ---------- Role & Teammate reveal pop-up ----------
@@ -2074,6 +2571,26 @@
       el('revealModal').classList.remove('active');
     }
 
+    // ---------- Case B: tagged hider squad confirms a converted-hunter tag ----------
+    function renderTagConfirm() {
+      const modal = el('tagModal');
+      const t = (localPlayer && !localPlayer.isSupervisor) ? findUserTeam() : null;
+      const show = !!(t && !t.retired && t.status === 'PENDING' && t.claimType === 'HIDER_CONFIRM' && state.status === 'HUNTING');
+      if (show) {
+        el('tagModalBody').innerHTML =
+          `<strong>${esc(t.claimedBy || 'A hunter')}</strong>${t.claimedBySquad ? ` (${esc(t.claimedBySquad)})` : ''} says they tagged <strong>${esc(t.name)}</strong>.<br><br>Were you caught?`;
+        modal.classList.add('active');
+        if (!tagModalOpen) {
+          tagModalOpen = true;
+          SFX.alert();
+          vibrate([300, 150, 300]);
+        }
+      } else {
+        modal.classList.remove('active');
+        tagModalOpen = false;
+      }
+    }
+
     // ---------- Global elimination broadcast ----------
     function checkEliminations() {
       state.teams.forEach(t => {
@@ -2098,11 +2615,11 @@
         const names = r.team.members.map(m => esc(m.name)).join(', ');
         triggerBroadcastAlert(
           mine ? '🏆 YOU WON!' : '🏆 GAME OVER',
-          `<strong>${esc(r.team.name)}</strong> is the last squad standing!<br><span style="color: var(--text-muted); font-size: 0.95rem;">${names}</span><br><br><span style="color:#3dff86; font-size:1.25rem; letter-spacing:1px;">WINNERS: RETURN TO THE DESIGNATED MEETING SPOT</span>`,
+          `<strong>${esc(r.team.name)}</strong> is the last squad standing!<br><span style="color: var(--text-muted); font-size: 0.95rem;">${names}</span><br><br><span style="color:#3dff86; font-size:1.25rem; letter-spacing:1px;">RETURN TO THE DESIGNATED BASE MEETING SPOT</span>`,
           'victory'
         );
       } else {
-        triggerBroadcastAlert('☠ HUNTERS WIN', `Every hiding squad has been hunted down!<br><br>Everyone: return to the designated meeting spot.`, 'victory');
+        triggerBroadcastAlert('☠ HUNTERS WIN', `Every hiding squad has been hunted down!<br><br><span style="color:#3dff86; font-size:1.25rem; letter-spacing:1px;">EVERYONE: RETURN TO THE DESIGNATED BASE MEETING SPOT</span>`, 'victory');
       }
     }
 
@@ -2116,15 +2633,38 @@
         box.innerHTML = `
           <div class="rb-title">🏆 ${esc(r.team.name)} WINS</div>
           <div class="rb-body">${mine ? 'YOUR SQUAD IS THE LAST ONE STANDING!' : 'Last hiding squad standing.'}<br>${r.team.members.map(m => esc(m.name)).join(', ')}</div>
-          <div class="rb-meet">➜ WINNERS: RETURN TO THE DESIGNATED MEETING SPOT</div>
+          <div class="rb-meet">➜ RETURN TO THE DESIGNATED BASE MEETING SPOT</div>
         `;
       } else {
         box.innerHTML = `
           <div class="rb-title">☠ HUNTERS WIN</div>
           <div class="rb-body">All hiding squads have been caught.</div>
-          <div class="rb-meet">➜ RETURN TO THE DESIGNATED MEETING SPOT</div>
+          <div class="rb-meet">➜ EVERYONE: RETURN TO THE DESIGNATED BASE MEETING SPOT</div>
         `;
       }
+    }
+
+    // ---------- Final leaderboard (ranked by survival time) ----------
+    function renderLeaderboard() {
+      const box = el('leaderboardCard');
+      const r = getGameResult();
+      if (!r) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      const rows = getStandings();
+      el('leaderboardList').innerHTML = rows.map((row, i) => {
+        const top = i === 0;
+        const note = row.won ? '🏆 WINNER — LONGEST SURVIVOR'
+          : top ? '⭐ LONGEST SURVIVOR'
+          : row.left ? 'LEFT THE GAME'
+          : 'HUNTED';
+        return `
+          <div class="lb-row ${top ? 'win' : ''}">
+            <div class="lb-rank">${i + 1}</div>
+            <div class="lb-name">${esc(row.team.name)}<span class="lb-note">${note}</span></div>
+            <div class="lb-time">${fmtMS(row.ms)}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     // ---------- Undo Elimination toast (supervisors) ----------
@@ -2144,6 +2684,26 @@
 
     function renderAdmin() {
       if (!isSupervisor()) return;
+
+      // Registration gate controls
+      const regBtn = el('regToggleBtn');
+      const open = !!state.registrationOpen;
+      regBtn.innerText = open ? '🔒 CLOSE REGISTRATION' : '🔓 OPEN REGISTRATION';
+      regBtn.className = 'btn ' + (open ? 'btn-red' : 'btn-green');
+      el('regStatusText').innerText = open
+        ? 'REGISTRATION IS OPEN — players can join now'
+        : 'REGISTRATION IS CLOSED — players see the waiting screen';
+
+      // Skip / instant-start label follows the current phase
+      const skip = el('skipPhaseBtn');
+      const skipLabels = {
+        REVEAL_COUNTDOWN: '⏭ SKIP REVEAL — START MEETUP NOW',
+        MEETUP: '⏭ SKIP MEETUP — START HIDING NOW',
+        HIDING: '⏭ SKIP HIDING — START HUNT NOW'
+      };
+      skip.innerText = skipLabels[state.status] || '⏭ INSTANT START / SKIP';
+      skip.disabled = !skipLabels[state.status];
+
       const box = el('earlyHuntBox');
       const btn = el('beginHuntBtn');
       const info = el('earlyHuntInfo');
@@ -2167,10 +2727,15 @@
 
     function tickTimer() {
       updateSoundPill();
+      flashTitle();
+      if (state.recall && state.recall.active) SFX.startSiren(); // keeps the siren alive / resumed
 
       // Re-render only when time-based UI changes (e.g. undo window ended)
       if (uiSig() !== lastSig) updateUI();
       else renderUndoToast();
+
+      const adminMatch = el('adminMatchTime');
+      if (state.status !== 'HUNTING') adminMatch.innerText = '';
 
       if (state.status === 'LOBBY') return;
 
@@ -2180,19 +2745,23 @@
 
       if (state.status === 'HUNTING') {
         const over = !!getGameResult();
-        labelEl.innerText = over ? 'GAME OVER' : 'HUNT IS FULLY ACTIVE!';
-        timerEl.innerText = over ? '🏁 OVER' : '☠ LIVE ☠';
+        const elapsed = matchElapsedMs();
+        labelEl.innerText = over ? 'GAME OVER • FINAL MATCH TIME' : 'HUNT IN PROGRESS • MATCH TIME';
+        timerEl.innerText = fmtMS(elapsed);
         timerEl.classList.remove('paused');
         progEl.innerText = '';
+        adminMatch.innerText = `⏱ MATCH TIME ${fmtMS(elapsed)}${over ? ' (FINAL)' : ''}`;
 
         if (!localAlertsShown.hunterStart && localPlayer) {
           localAlertsShown.hunterStart = true;
-          triggerBroadcastAlert(
-            '⚠️ HUNTERS ON HUNT ⚠️',
-            `<div style="font-family: var(--display); font-size: 2rem; color: #ff3a1a; letter-spacing: 2px; line-height: 1.15;">HUNTERS ON HUNT, STAY SAFE</div><div style="margin-top: 12px; font-size: 0.95rem; color: var(--text-muted);">Hunters are now released into Nexus Mall.</div>`,
-            'alert'
-          );
-          flashScreen();
+          if (!over) {
+            triggerBroadcastAlert(
+              '⚠️ HUNTERS ON HUNT ⚠️',
+              `<div style="font-family: var(--display); font-size: 2rem; color: #ff3a1a; letter-spacing: 2px; line-height: 1.15;">HUNTERS ON HUNT, STAY SAFE</div><div style="margin-top: 12px; font-size: 0.95rem; color: var(--text-muted);">Hunters are now released into Nexus Mall.</div>`,
+              'alert'
+            );
+            flashScreen();
+          }
         }
         return;
       }
@@ -2223,30 +2792,13 @@
       if (!state.paused && diffSeconds === 0) advancePhase(state.status);
     }
 
-    // Guarded phase transition: re-reads the latest state so duplicate/stale clients can't double-advance
+    // Guarded phase transition: re-reads the latest state AND uses a phaseVersion compare-and-set
+    // so duplicate/stale clients finishing the timer at the same millisecond cannot double-advance.
     async function advancePhase(expected) {
       if (transitioning) return;
       transitioning = true;
       try {
-        await mutate(s => {
-          if (s.status !== expected || s.paused) return false;
-          if (!s.timerEndTime || s.timerEndTime > Date.now()) return false;
-          if (expected === 'REVEAL_COUNTDOWN') {
-            // Transition to 2-minute Meetup Phase
-            s.status = 'MEETUP';
-            s.timerEndTime = Date.now() + PHASE.MEETUP;
-          } else if (expected === 'MEETUP') {
-            // Transition to 10-minute Hiding Phase
-            s.status = 'HIDING';
-            s.timerEndTime = Date.now() + PHASE.HIDING;
-          } else if (expected === 'HIDING') {
-            // Transition to Active Hunt Phase
-            enterHunt(s);
-          } else {
-            return false;
-          }
-          return true;
-        });
+        await mutate(s => applyAdvance(s, expected, false), { guardPhase: true });
       } finally {
         transitioning = false;
       }
@@ -2260,31 +2812,39 @@
 
       container.innerHTML = state.teams.map(team => {
         const finalized = isFinalized(team);
+        const retired = !!team.retired && team.status !== 'CAUGHT';
         let statusBadge = `<span class="status-badge status-hiding">HIDING</span>`;
         if (team.hidden) statusBadge = `<span class="status-badge status-hidden">✅ HIDDEN</span>`;
-        if (team.status === 'PENDING') statusBadge = `<span class="status-badge status-pending">CLAIMED CAUGHT</span>`;
+        if (team.status === 'PENDING') {
+          statusBadge = team.claimType === 'HIDER_CONFIRM'
+            ? `<span class="status-badge status-pending">WAITING FOR SQUAD TO CONFIRM</span>`
+            : `<span class="status-badge status-pending">CLAIMED CAUGHT</span>`;
+        }
         if (team.status === 'CAUGHT') {
           statusBadge = finalized
             ? `<span class="status-badge status-caught">TEAM HUNTED</span>`
             : `<span class="status-badge status-pending">CONFIRMING…</span>`;
         }
+        if (retired) statusBadge = `<span class="status-badge status-retired">RETIRED</span>`;
         if (result && result.type === 'TEAM' && result.team.id === team.id) {
           statusBadge = `<span class="status-badge status-win">🏆 WINNER</span>`;
         }
 
         // Batch details intentionally excluded from team members list
-        const members = team.members.map(m => `${esc(m.name)} ${getVIPBadgeHTML(m.name)}`).join(', ');
+        const members = team.members.length
+          ? team.members.map(m => `${esc(m.name)} ${getVIPBadgeHTML(m.name)}`).join(', ')
+          : 'All members left';
 
         // Hiders do NOT get the Caught button under any circumstances.
         // Button only shows during active HUNTING phase for Hunters.
-        const canPressCaught = isHunter && state.status === 'HUNTING' && team.status === 'HIDING' && !result;
+        const canPressCaught = isHunter && state.status === 'HUNTING' && team.status === 'HIDING' && !team.retired && !result;
 
         // Hidden Successfully: only members of that squad, only during the hiding phase
         const isMine = !!(myTeam && myTeam.id === team.id && localPlayer && !localPlayer.isSupervisor);
-        const canMarkHidden = isMine && state.status === 'HIDING' && team.status === 'HIDING' && !team.hidden;
+        const canMarkHidden = isMine && state.status === 'HIDING' && team.status === 'HIDING' && !team.hidden && !team.retired;
 
         return `
-          <div class="team-card ${finalized ? 'caught' : ''}">
+          <div class="team-card ${finalized ? 'caught' : ''} ${retired ? 'retired' : ''}">
             <div class="team-title">
               <span>${esc(team.name)}</span>
               ${statusBadge}
@@ -2308,9 +2868,10 @@
       }).join('');
     }
 
+    // Supervisor panel only lists OG-hunter claims (Case A). Converted-hunter tags (Case B) skip the supervisor.
     function renderPendingApprovals() {
       const container = el('pendingApprovalsList');
-      const pendingTeams = state.teams.filter(t => t.status === 'PENDING');
+      const pendingTeams = state.teams.filter(t => t.status === 'PENDING' && t.claimType !== 'HIDER_CONFIRM' && !t.retired);
 
       if (pendingTeams.length === 0) {
         container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted);">No pending catch approvals</div>`;
@@ -2322,6 +2883,7 @@
         ${pendingTeams.map(team => `
           <div style="background:#120404; padding:12px; border-radius:12px; margin-bottom:10px; border:2px solid var(--scary-red); box-shadow: inset 0 1px 0 rgba(255,60,40,.2);">
             <div style="font-weight:700; color:var(--amber);">${esc(team.name)}</div>
+            ${team.claimedBy ? `<div style="font-size:0.8rem; color:var(--text-muted);">Claimed by ${esc(team.claimedBy)}</div>` : ''}
             <button class="btn btn-red" style="padding:8px; margin-top:6px; font-size:0.8rem; min-height:48px;" onclick="approveCatch('${team.id}')">
               APPROVE CATCH & TURN TO HUNTERS
             </button>
@@ -2389,19 +2951,13 @@
       const res = await mutate(s => {
         const idx = s.players.findIndex(p => p.id === id);
         if (idx === -1) return false;
-        s.players.splice(idx, 1);
 
         // Track kicked players by name so their device detects it
         if (!Array.isArray(s.kickedNames)) s.kickedNames = [];
         if (!s.kickedNames.some(n => sameName(n, name))) s.kickedNames.push(name);
 
-        // If game is running, also remove from seekers and team members
-        s.seekers = s.seekers.filter(n => !sameName(n, name));
-        s.teams.forEach(t => {
-          t.members = t.members.filter(m => !sameName(m.name, name));
-        });
-        // Remove empty teams
-        s.teams = s.teams.filter(t => t.members.length > 0);
+        // Remove from roster, hunters and squads — squads left empty are retired (never spliced out mid-game)
+        removePlayerFromGame(s, name);
         return true;
       });
       if (res === 'ok') {
@@ -2421,9 +2977,8 @@
       localStorage.removeItem('chipset_session');
       localStorage.setItem('chipset_kicked', '1');
       localPlayer = null;
-      el('stepDashboard').classList.add('hidden');
-      el('stepRegister').classList.add('hidden');
       el('stepKicked').classList.remove('hidden');
+      renderGate();
     }
 
     async function requestRejoin() {
@@ -2500,7 +3055,7 @@
             localStorage.removeItem('chipset_rejoin_name');
             localStorage.removeItem('chipset_rejoin_batch');
             el('stepKicked').classList.add('hidden');
-            el('stepDashboard').classList.remove('hidden');
+            renderGate();
             showNotice('✅ Rejoined! Welcome back.');
             updateUI();
           }
