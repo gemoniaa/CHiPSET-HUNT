@@ -26,6 +26,9 @@
       --text-muted: #c48a20;
       --font-stack: 'Oswald', Impact, sans-serif;
       --display: 'Creepster', cursive;
+      /* Squad color theme (set per player by setSquadTheme) */
+      --squad: #FFB000;
+      --squad-glow: rgba(255, 176, 0, 0.5);
     }
 
     * {
@@ -583,7 +586,7 @@
 
     .conn {
       position: fixed;
-      top: 10px;
+      top: 18px;
       right: 10px;
       z-index: 50;
       display: flex;
@@ -625,7 +628,7 @@
 
     .notice-toast {
       position: fixed;
-      top: 54px;
+      top: 60px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 960;
@@ -736,6 +739,75 @@
     .lb-time { font-family: var(--display); font-size: 28px; color: var(--amber); letter-spacing: 1px; }
     .lb-row.win .lb-time { color: #ffd700; }
 
+    /* ==========================================
+       SQUAD COLORS + GROUP-UP CHECKPOINT
+       ========================================== */
+    #squadStrip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 10px;
+      z-index: 55;
+      background: var(--squad);
+      box-shadow: 0 0 18px var(--squad), 0 0 36px var(--squad-glow);
+    }
+
+    .squad-beacon {
+      border: 4px solid var(--squad);
+      text-align: center;
+      animation: beaconpulse 2.2s ease-in-out infinite;
+    }
+    .beacon-label { font-size: .78rem; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 10px; }
+    .beacon-swatch {
+      font-family: var(--display);
+      font-size: min(13vw, 60px);
+      line-height: 1;
+      letter-spacing: 2px;
+      padding: 22px 10px;
+      border-radius: 14px;
+      -webkit-text-stroke: 0.8px currentColor;
+      paint-order: stroke fill;
+      box-shadow: 0 0 26px var(--squad-glow), inset 0 0 18px rgba(0,0,0,.18);
+    }
+    .beacon-members { margin-top: 12px; }
+    .beacon-pill {
+      display: inline-block;
+      margin: 3px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 1rem;
+      border: 2px solid var(--squad);
+      color: var(--squad);
+      background: rgba(255,255,255,.04);
+    }
+    .beacon-pill.ok { background: var(--squad); color: #000; }
+    .beacon-status { margin-top: 12px; font-size: 1rem; line-height: 1.35; color: var(--amber); letter-spacing: 1.5px; }
+    .beacon-status.go { color: #3dff86; }
+    .sq-dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .grp-row {
+      background: #0e0400;
+      border: 2px solid var(--amber-dim);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .grp-row .btn { margin-top: 8px; min-height: 42px; font-size: .8rem; }
+
+    @keyframes beaconpulse {
+      0%,100% { box-shadow: 0 0 14px var(--squad-glow), 0 8px 24px rgba(0,0,0,.55); }
+      50% { box-shadow: 0 0 44px var(--squad), 0 8px 24px rgba(0,0,0,.55); }
+    }
+
     @keyframes flicker {
       0%,18%,22%,25%,53%,57%,100% { opacity: 1; }
       20%,24%,55% { opacity: .35; }
@@ -770,7 +842,7 @@
     .timer-display.paused { animation: none; opacity: .6; }
 
     @media (prefers-reduced-motion: reduce) {
-      h1, .brand, .timer-display, .brand-mark .logo, .fb, .fog, .eyes, body::before { animation: none; }
+      h1, .brand, .timer-display, .brand-mark .logo, .fb, .fog, .eyes, body::before, .squad-beacon { animation: none; }
       .eyes { opacity: 0; }
       .recall-overlay { animation: none; background: #d40000; }
       .btn-ready, .conn .dot { animation: none; }
@@ -818,6 +890,9 @@
     <div class="eyes e3"><i></i><i></i></div>
   </div>
 
+  <!-- SQUAD COLOR STRIP (always-on color identity for hiders) -->
+  <div id="squadStrip" class="hidden"></div>
+
   <!-- REALTIME CONNECTION INDICATOR + WAKE LOCK ICON -->
   <div id="connIndicator" class="conn connecting" title="Realtime connection status">
     <span class="dot"></span>
@@ -841,11 +916,11 @@
 
     <!-- STEP 0: REGISTRATION CLOSED (default). Only the supervisor passcode is accessible. -->
     <section id="stepWaiting" class="card wait-card">
-      <div class="wait-icon">🔒</div>
-      <h2 class="wait-title">REGISTRATION CLOSED</h2>
+      <div class="wait-icon">⏳</div>
+      <h2 class="wait-title">GAME NOT STARTED YET</h2>
       <p class="wait-sub">
-        Registration is currently closed.<br>
-        Please wait — the supervisor will open it shortly.<br>
+        The game hasn't started yet.<br>
+        Please wait — the supervisor will let you in shortly.<br>
         This screen unlocks by itself.
       </p>
       <div class="form-group" style="text-align: left;">
@@ -927,6 +1002,9 @@
         <button id="leaveBtn" class="btn btn-dark" onclick="leaveGame()" style="min-height: 52px; font-size: 16px; margin-top: 14px;">🚪 LEAVE GAME</button>
       </div>
 
+      <!-- SQUAD COLOR BEACON + GROUP-UP CHECKPOINT (hiders only) -->
+      <div id="squadBeacon" class="card squad-beacon hidden"></div>
+
       <!-- PERSISTENT SUPERVISOR CONTROLS (visible only to authorized supervisors) -->
       <div id="adminPanel" class="card admin-panel hidden">
         <div class="admin-head">
@@ -958,6 +1036,13 @@
           <button class="btn btn-dark" onclick="timerReduce(30000)">➖ −30 SEC</button>
         </div>
         <button id="skipPhaseBtn" class="btn btn-orange" onclick="skipPhase()" style="margin-top: 10px; min-height: 56px; font-size: 16px;">⏭ INSTANT START / SKIP</button>
+
+        <!-- GROUP-UP CHECKPOINT (visible during MEETUP only) -->
+        <div id="groupBox" class="hidden">
+          <div class="admin-label">SQUAD GROUP-UP CHECKPOINT</div>
+          <div id="groupInfo" class="admin-note" style="margin-top: 6px; font-size: 1rem;"></div>
+          <div id="groupWaitList" style="margin-top: 8px;"></div>
+        </div>
 
         <div id="earlyHuntBox" class="hidden">
           <div class="admin-label">EARLY HUNT INITIATION</div>
@@ -1121,22 +1206,61 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Simple, easy-to-shout squad names (assigned in order)
-    const TEAM_NAMES = [
-      "Squad Alpha", "Squad Bravo", "Team Red", "Team Blue",
-      "Squad Falcon", "Team Green", "Squad Delta", "Team Orange",
-      "Squad Eagle", "Team Purple", "Squad Echo", "Team Yellow",
-      "Squad Wolf", "Squad Tiger"
+    // Unique, high-contrast squad colors (assigned in order). A squad is named after its color,
+    // so "Crimson Red" is both what you look for in the crowd and what hunters shout.
+    const SQUAD_COLORS = [
+      { name: "Crimson Red",    hex: "#ff2a3d" },
+      { name: "Neon Cyan",      hex: "#19f0ff" },
+      { name: "Emerald Green",  hex: "#2bd96b" },
+      { name: "Amber Gold",     hex: "#ffc21a" },
+      { name: "Royal Purple",   hex: "#9b5cff" },
+      { name: "Hot Pink",       hex: "#ff4fd8" },
+      { name: "Electric Blue",  hex: "#3d7bff" },
+      { name: "Tangerine",      hex: "#ff7a1a" },
+      { name: "Silver White",   hex: "#eef3fa" },
+      { name: "Lime Yellow",    hex: "#d6ff2a" },
+      { name: "Mint",           hex: "#8dffc8" },
+      { name: "Magenta",        hex: "#d100d1" },
+      { name: "Bronze",         hex: "#c8742a" },
+      { name: "Sky Blue",       hex: "#7ed0ff" }
     ];
 
     function teamNameFor(i) {
-      const base = TEAM_NAMES[i % TEAM_NAMES.length];
-      const round = Math.floor(i / TEAM_NAMES.length);
+      const base = SQUAD_COLORS[i % SQUAD_COLORS.length].name;
+      const round = Math.floor(i / SQUAD_COLORS.length);
       return round ? `${base} ${round + 1}` : base;
     }
 
+    function colorFor(i) {
+      return SQUAD_COLORS[i % SQUAD_COLORS.length].hex;
+    }
+
+    // Color of a squad (falls back gracefully for games started before colors existed)
+    function teamColor(t) {
+      if (t && t.color) return t.color;
+      const idx = Math.max(0, state.teams.indexOf(t));
+      return colorFor(idx);
+    }
+
+    function hexToRgba(hex, a) {
+      const h = String(hex).replace('#', '');
+      const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+    }
+
+    // Readable text color on top of a squad color
+    function inkFor(hex) {
+      const h = String(hex).replace('#', '');
+      const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+      const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+      return lum > 0.55 ? '#0a0502' : '#ffffff';
+    }
+
     const SUPERVISOR_PASSCODE = '1121';
-    const PHASE = { REVEAL: 10 * 1000, MEETUP: 2 * 60 * 1000, HIDING: 10 * 60 * 1000 };
+    // MEETUP is the "find your squad + tap Successfully Grouped Up" checkpoint.
+    // It ends early (after GROUP_GRACE_MS) the moment every squad has grouped, so the long cap costs nothing.
+    const PHASE = { REVEAL: 10 * 1000, MEETUP: 5 * 60 * 1000, HIDING: 10 * 60 * 1000 };
+    const GROUP_GRACE_MS = 5 * 1000;
     const FIVE_MIN = 5 * 60 * 1000;
     const UNDO_MS = 10 * 1000;
     const TEAM_SIZE = 3;
@@ -1187,8 +1311,19 @@
       hunterStart: false,
       eliminatedTeams: new Set(),
       resultKey: null,
-      allHiddenNotified: false
+      allHiddenNotified: false,
+      groupedTeams: new Set(),
+      allGrouped: false
     };
+
+    function resetAlertFlags() {
+      localAlertsShown.hunterStart = false;
+      localAlertsShown.eliminatedTeams.clear();
+      localAlertsShown.resultKey = null;
+      localAlertsShown.allHiddenNotified = false;
+      localAlertsShown.groupedTeams.clear();
+      localAlertsShown.allGrouped = false;
+    }
 
     let mutating = 0;
     let transitioning = false;
@@ -1263,6 +1398,27 @@
 
     function closeAlertModal() {
       el('alertModal').classList.remove('active');
+    }
+
+    // Apply (or clear) the personal squad color theme across the whole screen
+    function setSquadTheme(hex) {
+      const root = document.documentElement;
+      const strip = el('squadStrip');
+      const card = el('userProfileCard');
+      if (!hex) {
+        root.style.removeProperty('--squad');
+        root.style.removeProperty('--squad-glow');
+        strip.classList.add('hidden');
+        if (card) { card.style.borderColor = ''; card.style.boxShadow = ''; }
+        return;
+      }
+      root.style.setProperty('--squad', hex);
+      root.style.setProperty('--squad-glow', hexToRgba(hex, 0.55));
+      strip.classList.remove('hidden');
+      if (card) {
+        card.style.borderColor = hex;
+        card.style.boxShadow = `0 0 24px ${hexToRgba(hex, 0.45)}, inset 0 0 28px rgba(0,0,0,.55)`;
+      }
     }
 
     // ==========================================
@@ -1463,8 +1619,12 @@
 
     function markInitialSeen() {
       localAlertsShown.gameId = state.gameId;
-      state.teams.forEach(t => { if (isFinalized(t)) localAlertsShown.eliminatedTeams.add(t.id); });
+      state.teams.forEach(t => {
+        if (isFinalized(t)) localAlertsShown.eliminatedTeams.add(t.id);
+        if (t.grouped) localAlertsShown.groupedTeams.add(t.id);
+      });
       if (state.status === 'HUNTING') localAlertsShown.hunterStart = true;
+      if (state.status === 'MEETUP' && allSquadsGrouped()) localAlertsShown.allGrouped = true;
       const r = getGameResult();
       if (r) localAlertsShown.resultKey = resultKeyOf(r);
     }
@@ -1567,12 +1727,12 @@
       localStorage.removeItem('chipset_session');
       localPlayer = null;
       supervisorAuth = false;
-      localAlertsShown.hunterStart = false;
-      localAlertsShown.eliminatedTeams.clear();
-      localAlertsShown.resultKey = null;
+      resetAlertFlags();
       el('tagModal').classList.remove('active');
       el('revealModal').classList.remove('active');
       tagModalOpen = false;
+      setSquadTheme(null);
+      el('squadBeacon').classList.add('hidden');
       renderGate();
     }
 
@@ -1678,6 +1838,34 @@
       return state.teams.find(t => t.members.some(m => sameName(m.name, localPlayer.name))) || null;
     }
 
+    // ---------- Group-up checkpoint ----------
+    // Recomputes each squad's "grouped" flag from the per-member confirmations (groupedUp).
+    // A squad is grouped once EVERY current member has tapped "Successfully Grouped Up".
+    // Once every active squad is grouped, the meetup countdown is cut to GROUP_GRACE_MS so hiding starts promptly.
+    function refreshGrouping(s) {
+      const now = Date.now();
+      s.teams.forEach(t => {
+        if (t.retired || t.status === 'CAUGHT') return;
+        const names = t.members.map(m => m.name);
+        t.groupedUp = (Array.isArray(t.groupedUp) ? t.groupedUp : []).filter(n => names.some(x => sameName(x, n)));
+        const was = !!t.grouped;
+        t.grouped = names.length > 0 && names.every(n => t.groupedUp.some(x => sameName(x, n)));
+        if (t.grouped && !was) t.groupedAt = now;
+        if (!t.grouped) delete t.groupedAt;
+      });
+      if (s.status === 'MEETUP' && !s.paused && s.timerEndTime) {
+        const act = s.teams.filter(isActiveTeam);
+        if (act.length && act.every(t => t.grouped)) {
+          s.timerEndTime = Math.min(s.timerEndTime, now + GROUP_GRACE_MS);
+        }
+      }
+    }
+
+    function allSquadsGrouped() {
+      const a = activeTeams();
+      return a.length > 0 && a.every(t => t.grouped);
+    }
+
     // Win conditions (only evaluated once the hunt is live):
     //  - exactly one active hiding squad left (or the match started with just one) -> that squad wins
     //  - no active hiding squads left -> hunters win
@@ -1745,7 +1933,7 @@
 
     function uiSig() {
       return state.status + '|' + (getGameResult() ? 'R' : '') + '|' + (state.registrationOpen ? 'O' : 'C') + '|' +
-        state.teams.map(t => t.id + ':' + t.status + ':' + (isFinalized(t) ? 1 : 0) + (t.hidden ? 'h' : '') + (t.retired ? 'x' : '')).join(',');
+        state.teams.map(t => t.id + ':' + t.status + ':' + (isFinalized(t) ? 1 : 0) + (t.hidden ? 'h' : '') + (t.retired ? 'x' : '') + (t.grouped ? 'g' : '')).join(',');
     }
 
     // Remove a player everywhere (roster, hunters, squads). Squads left with no members are retired.
@@ -1759,6 +1947,7 @@
         t.members = t.members.filter(m => !sameName(m.name, name));
         if (t.members.length === 0 && !t.retired) retireTeam(s, t, now);
       });
+      refreshGrouping(s); // a departing member can complete a squad's group-up
     }
 
     function retireTeam(s, t, now) {
@@ -1816,7 +2005,7 @@
           return false;
         });
         if (closed) {
-          alert("Registration is currently closed.");
+          alert("The game hasn't started yet — please wait for the supervisor.");
           renderGate();
           return;
         }
@@ -1898,6 +2087,59 @@
         return true;
       });
       showNotice('Tag disputed — your squad is still in the game');
+    }
+
+    // ---------- Group-up checkpoint: each member taps once their squad is physically together ----------
+    async function groupUp() {
+      if (!localPlayer || localPlayer.isSupervisor) return;
+      const mine = findUserTeam();
+      if (!mine) return;
+      const name = localPlayer.name;
+      const teamId = mine.id;
+      const res = await mutate(s => {
+        if (s.status !== 'MEETUP') return false;
+        const t = s.teams.find(x => x.id === teamId);
+        if (!t || t.retired || t.grouped) return false;
+        if (!t.members.some(m => sameName(m.name, name))) return false;
+        if (!Array.isArray(t.groupedUp)) t.groupedUp = [];
+        if (t.groupedUp.some(n => sameName(n, name))) return false;
+        t.groupedUp.push(name);
+        refreshGrouping(s);
+        return true;
+      });
+      if (res === 'ok') vibrate([120, 60, 120]);
+    }
+
+    // Misclick safety: take your check-in back, but only while the squad is not yet fully grouped
+    async function ungroupUp() {
+      if (!localPlayer || localPlayer.isSupervisor) return;
+      const mine = findUserTeam();
+      if (!mine) return;
+      const name = localPlayer.name;
+      const teamId = mine.id;
+      await mutate(s => {
+        if (s.status !== 'MEETUP') return false;
+        const t = s.teams.find(x => x.id === teamId);
+        if (!t || t.retired || t.grouped || !Array.isArray(t.groupedUp)) return false;
+        const before = t.groupedUp.length;
+        t.groupedUp = t.groupedUp.filter(n => !sameName(n, name));
+        if (t.groupedUp.length === before) return false;
+        refreshGrouping(s);
+        return true;
+      });
+    }
+
+    // Supervisor override for a squad whose phones are dead / who are visibly together
+    async function forceGroup(teamId) {
+      if (!isSupervisor()) return;
+      await mutate(s => {
+        if (s.status !== 'MEETUP') return false;
+        const t = s.teams.find(x => x.id === teamId);
+        if (!t || t.retired || t.grouped) return false;
+        t.groupedUp = t.members.map(m => m.name);
+        refreshGrouping(s);
+        return true;
+      });
     }
 
     async function markHidden(teamId) {
@@ -2120,10 +2362,13 @@
           cursor += size;
           s.teams.push({
             id: 'sq' + (i + 1),
-            name: teamNameFor(i),
+            name: teamNameFor(i),       // squads are named after their color
+            color: colorFor(i),         // unique color theme shown on every teammate's screen
             members: teamMembers,
             status: 'HIDING',
-            hidden: false
+            hidden: false,
+            grouped: false,             // true once every member has tapped "Successfully Grouped Up"
+            groupedUp: []
           });
         }
 
@@ -2142,10 +2387,7 @@
         return true;
       });
 
-      localAlertsShown.hunterStart = false;
-      localAlertsShown.eliminatedTeams.clear();
-      localAlertsShown.resultKey = null;
-      localAlertsShown.allHiddenNotified = false;
+      resetAlertFlags();
       closeSupervisorModal();
     }
 
@@ -2222,10 +2464,7 @@
         });
         if (res !== 'ok') return;
 
-        localAlertsShown.hunterStart = false;
-        localAlertsShown.eliminatedTeams.clear();
-        localAlertsShown.resultKey = null;
-        localAlertsShown.allHiddenNotified = false;
+        resetAlertFlags();
 
         if (!(localPlayer && localPlayer.isSupervisor)) {
           // Original behaviour: the resetting player must re-register too
@@ -2300,6 +2539,7 @@
         return;
       }
       if (expected === 'HIDING' && !confirm("Skip the hiding phase and release the Hunters NOW?")) return;
+      if (expected === 'MEETUP' && !allSquadsGrouped() && !confirm("Not every squad has grouped up yet. Start the hiding phase anyway?")) return;
       const res = await mutate(s => applyAdvance(s, expected, true), { guardPhase: true });
       if (res === 'skip') showNotice('Phase already changed');
     }
@@ -2319,6 +2559,7 @@
         s.timerEndTime = Date.now() + d;
         s.paused = false;
         s.pausedRemaining = null;
+        if (s.status === 'MEETUP') refreshGrouping(s); // keep the "all grouped" fast-forward consistent
         return true;
       });
     }
@@ -2404,10 +2645,7 @@
     function updateUI() {
       // New game detected -> reset per-game alert flags
       if (state.gameId !== localAlertsShown.gameId) {
-        localAlertsShown.hunterStart = false;
-        localAlertsShown.eliminatedTeams.clear();
-        localAlertsShown.resultKey = null;
-        localAlertsShown.allHiddenNotified = false;
+        resetAlertFlags();
         localAlertsShown.gameId = state.gameId;
       }
 
@@ -2483,6 +2721,7 @@
         renderTeams();
       }
 
+      renderSquadBeacon();
       renderPendingApprovals();
       renderAdmin();
       renderResult();
@@ -2497,6 +2736,7 @@
 
       if (localPlayer) {
         checkReveal();
+        checkGrouping();
         checkEliminations();
         checkWinner();
       }
@@ -2522,6 +2762,81 @@
       }
     }
 
+    // ---------- Squad color beacon + "Successfully Grouped Up" checkpoint ----------
+    function renderSquadBeacon() {
+      const box = el('squadBeacon');
+      const team = (localPlayer && !localPlayer.isSupervisor) ? findUserTeam() : null;
+      const live = state.status !== 'LOBBY' && state.status !== 'REVEAL_COUNTDOWN';
+      const show = !!(team && live && !team.retired && team.status !== 'CAUGHT' && !isLocalHunter() && !getGameResult());
+      if (!show) {
+        box.classList.add('hidden');
+        setSquadTheme(null);
+        return;
+      }
+
+      const hex = teamColor(team);
+      const ink = inkFor(hex);
+      setSquadTheme(hex);
+
+      const grouped = Array.isArray(team.groupedUp) ? team.groupedUp : [];
+      const memberPills = team.members.map(m => {
+        const ok = grouped.some(n => sameName(n, m.name));
+        const you = sameName(m.name, localPlayer.name);
+        const mark = state.status === 'MEETUP' ? (ok ? '✓ ' : '… ') : '';
+        return `<span class="beacon-pill ${state.status === 'MEETUP' && ok ? 'ok' : ''}">${mark}${esc(m.name)}${you ? ' (YOU)' : ''}</span>`;
+      }).join('');
+
+      let label = 'YOUR SQUAD COLOR';
+      let status = '';
+      let action = '';
+
+      if (state.status === 'MEETUP') {
+        label = 'YOUR SQUAD COLOR — FIND YOUR PEOPLE';
+        const iAmIn = grouped.some(n => sameName(n, localPlayer.name));
+        const waiting = team.members.filter(m => !grouped.some(n => sameName(n, m.name))).map(m => esc(m.name));
+        if (team.grouped) {
+          status = `<div class="beacon-status go">🤫 SQUAD GROUPED — SLIP AWAY QUIETLY.<br><span style="color: var(--text-muted); font-size: .85rem;">${allSquadsGrouped() ? 'All squads are ready — hiding starts now.' : 'Hiding starts once every squad has grouped up.'}</span></div>`;
+        } else if (iAmIn) {
+          status = `<div class="beacon-status">YOU'RE CHECKED IN.<br><span style="color: var(--text-muted); font-size: .85rem;">Waiting for: ${waiting.join(', ')}</span></div>`;
+          action = `<button class="btn btn-dark" style="min-height: 48px; font-size: 15px;" onclick="ungroupUp()">↩ NOT TOGETHER YET (UNDO)</button>`;
+        } else {
+          status = `<div class="beacon-status">Look for <strong style="color: var(--squad);">${esc(team.name.toUpperCase())}</strong> on your teammates' screens. Once your whole squad is together, tap below.</div>`;
+          action = `<button class="btn btn-green" onclick="groupUp()">✅ SUCCESSFULLY GROUPED UP</button>`;
+        }
+      } else if (state.status === 'HIDING') {
+        label = 'YOUR SQUAD COLOR — HIDE TOGETHER';
+      } else if (state.status === 'HUNTING') {
+        label = 'YOUR SQUAD COLOR — STAY HIDDEN';
+      }
+
+      box.innerHTML = `
+        <div class="beacon-label">${label}</div>
+        <div class="beacon-swatch" style="background: ${hex}; color: ${ink};">${esc(team.name)}</div>
+        <div class="beacon-members">${memberPills}</div>
+        ${status}
+        ${action}
+      `;
+      box.classList.remove('hidden');
+    }
+
+    // Personal + global notices when squads finish grouping up
+    function checkGrouping() {
+      if (state.status !== 'MEETUP') return;
+      let announcedMine = false;
+      const mine = (localPlayer && !localPlayer.isSupervisor) ? findUserTeam() : null;
+      if (mine && mine.grouped && !localAlertsShown.groupedTeams.has(mine.id)) {
+        localAlertsShown.groupedTeams.add(mine.id);
+        announcedMine = true;
+        SFX.ting();
+        vibrate([150, 80, 150]);
+        showNotice('✅ Your squad is grouped — slip away quietly');
+      }
+      if (allSquadsGrouped() && !localAlertsShown.allGrouped) {
+        localAlertsShown.allGrouped = true;
+        if (!announcedMine) showNotice('✅ All squads grouped — hiding starts in seconds');
+      }
+    }
+
     // ---------- Role & Teammate reveal pop-up ----------
     function checkReveal() {
       if (!localPlayer || localPlayer.isSupervisor || !state.gameId) return;
@@ -2541,6 +2856,8 @@
       if (isHunter) {
         const others = state.seekers.filter(n => !sameName(n, localPlayer.name));
         content.className = 'modal-content theme-hunter';
+        content.style.borderColor = '';
+        content.style.boxShadow = '';
         title.style.color = '#ff3a1a';
         title.innerText = '☠ YOU ARE A HUNTER';
         btn.className = 'btn btn-red';
@@ -2551,15 +2868,19 @@
         `;
         SFX.alarm();
       } else {
+        const hex = teamColor(team);
+        const ink = inkFor(hex);
         content.className = 'modal-content theme-hider';
-        title.style.color = '#3dff86';
+        content.style.borderColor = hex;
+        content.style.boxShadow = `0 0 35px ${hexToRgba(hex, 0.55)}, 0 16px 40px rgba(0,0,0,.7)`;
+        title.style.color = hex;
         title.innerText = '🏃 YOU ARE A HIDER';
         btn.className = 'btn btn-green';
         body.innerHTML = `
-          <div class="reveal-label">YOUR SQUAD</div>
-          <div class="squad-name">${esc(team.name)}</div>
-          <div>${team.members.map(m => `<span class="squad-pill">${esc(m.name)}${sameName(m.name, localPlayer.name) ? ' (YOU)' : ''} ${getVIPBadgeHTML(m.name)}</span>`).join('')}</div>
-          <div style="margin-top: 14px; color: var(--amber);">Stick with your squad. Hide well.</div>
+          <div class="reveal-label">YOUR SQUAD COLOR</div>
+          <div class="beacon-swatch" style="background: ${hex}; color: ${ink}; font-size: 40px; padding: 16px 8px; margin-bottom: 10px;">${esc(team.name)}</div>
+          <div>${team.members.map(m => `<span class="squad-pill" style="border-color: ${hex}; color: ${hex}; background: ${hexToRgba(hex, 0.12)};">${esc(m.name)}${sameName(m.name, localPlayer.name) ? ' (YOU)' : ''} ${getVIPBadgeHTML(m.name)}</span>`).join('')}</div>
+          <div style="margin-top: 14px; color: var(--amber);">Find your teammates by this color, then tap <strong>SUCCESSFULLY GROUPED UP</strong> once your squad is together.</div>
         `;
         SFX.ting();
       }
@@ -2660,7 +2981,7 @@
         return `
           <div class="lb-row ${top ? 'win' : ''}">
             <div class="lb-rank">${i + 1}</div>
-            <div class="lb-name">${esc(row.team.name)}<span class="lb-note">${note}</span></div>
+            <div class="lb-name"><span class="sq-dot" style="background: ${teamColor(row.team)}; color: ${teamColor(row.team)};"></span>${esc(row.team.name)}<span class="lb-note">${note}</span></div>
             <div class="lb-time">${fmtMS(row.ms)}</div>
           </div>
         `;
@@ -2703,6 +3024,31 @@
       };
       skip.innerText = skipLabels[state.status] || '⏭ INSTANT START / SKIP';
       skip.disabled = !skipLabels[state.status];
+
+      // Group-up checkpoint monitor (MEETUP only)
+      const gbox = el('groupBox');
+      if (state.status === 'MEETUP') {
+        const a = activeTeams();
+        const g = a.filter(t => t.grouped).length;
+        const all = allSquadsGrouped();
+        gbox.classList.remove('hidden');
+        el('groupInfo').innerText = all
+          ? '✅ ALL SQUADS GROUPED — hiding starts automatically'
+          : `GROUPED: ${g}/${a.length} squads — hiding starts when all are ready (or timer ends)`;
+        el('groupWaitList').innerHTML = a.filter(t => !t.grouped).map(t => {
+          const done = Array.isArray(t.groupedUp) ? t.groupedUp : [];
+          const missing = t.members.filter(m => !done.some(n => sameName(n, m.name))).map(m => esc(m.name)).join(', ');
+          const hex = teamColor(t);
+          return `
+            <div class="grp-row" style="border-color: ${hex};">
+              <div style="color: ${hex}; font-weight: 700;"><span class="sq-dot" style="background: ${hex}; color: ${hex};"></span>${esc(t.name)}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Waiting for: ${missing}</div>
+              <button class="btn btn-dark" onclick="forceGroup('${t.id}')">FORCE GROUPED</button>
+            </div>`;
+        }).join('');
+      } else {
+        gbox.classList.add('hidden');
+      }
 
       const box = el('earlyHuntBox');
       const btn = el('beginHuntBtn');
@@ -2778,11 +3124,14 @@
 
       let label = '';
       if (state.status === 'REVEAL_COUNTDOWN') label = 'ROLES REVEALING IN';
-      else if (state.status === 'MEETUP') label = 'TEAM MEETUP PHASE (MEET YOUR TEAM)';
+      else if (state.status === 'MEETUP') label = allSquadsGrouped() ? 'ALL SQUADS GROUPED • HIDING STARTS IN' : 'FIND YOUR SQUAD & GROUP UP';
       else if (state.status === 'HIDING') label = 'HIDING PHASE (RUN & HIDE)';
       labelEl.innerText = label + (state.paused ? ' • ⏸ PAUSED' : '');
 
-      if (state.status === 'HIDING') {
+      if (state.status === 'MEETUP') {
+        const a = activeTeams();
+        progEl.innerText = a.length ? `🤝 SQUADS GROUPED: ${a.filter(t => t.grouped).length} / ${a.length}` : '';
+      } else if (state.status === 'HIDING') {
         const a = activeTeams();
         progEl.innerText = a.length ? `🕳 SQUADS HIDDEN: ${a.filter(t => t.hidden).length} / ${a.length}` : '';
       } else {
@@ -2813,7 +3162,15 @@
       container.innerHTML = state.teams.map(team => {
         const finalized = isFinalized(team);
         const retired = !!team.retired && team.status !== 'CAUGHT';
+        const hex = teamColor(team);
+        const grouped = Array.isArray(team.groupedUp) ? team.groupedUp : [];
+
         let statusBadge = `<span class="status-badge status-hiding">HIDING</span>`;
+        if (state.status === 'MEETUP') {
+          statusBadge = team.grouped
+            ? `<span class="status-badge status-hidden">✅ GROUPED UP</span>`
+            : `<span class="status-badge status-pending">GATHERING ${grouped.length}/${team.members.length}</span>`;
+        }
         if (team.hidden) statusBadge = `<span class="status-badge status-hidden">✅ HIDDEN</span>`;
         if (team.status === 'PENDING') {
           statusBadge = team.claimType === 'HIDER_CONFIRM'
@@ -2832,7 +3189,10 @@
 
         // Batch details intentionally excluded from team members list
         const members = team.members.length
-          ? team.members.map(m => `${esc(m.name)} ${getVIPBadgeHTML(m.name)}`).join(', ')
+          ? team.members.map(m => {
+              const mark = (state.status === 'MEETUP' && grouped.some(n => sameName(n, m.name))) ? '✓ ' : '';
+              return `${mark}${esc(m.name)} ${getVIPBadgeHTML(m.name)}`;
+            }).join(', ')
           : 'All members left';
 
         // Hiders do NOT get the Caught button under any circumstances.
@@ -2843,13 +3203,16 @@
         const isMine = !!(myTeam && myTeam.id === team.id && localPlayer && !localPlayer.isSupervisor);
         const canMarkHidden = isMine && state.status === 'HIDING' && team.status === 'HIDING' && !team.hidden && !team.retired;
 
+        const cardStyle = (finalized || retired) ? '' : `border-color: ${hex}; box-shadow: 0 0 14px ${hexToRgba(hex, 0.3)}, 0 6px 16px rgba(0,0,0,.4);`;
+        const dot = `<span class="sq-dot" style="background: ${hex}; color: ${hex};"></span>`;
+
         return `
-          <div class="team-card ${finalized ? 'caught' : ''} ${retired ? 'retired' : ''}">
+          <div class="team-card ${finalized ? 'caught' : ''} ${retired ? 'retired' : ''}" style="${cardStyle}">
             <div class="team-title">
-              <span>${esc(team.name)}</span>
+              <span>${dot}${esc(team.name)}</span>
               ${statusBadge}
             </div>
-            <div class="member-list">${members}${isMine ? ' <span style="color: var(--hot);">• YOUR SQUAD</span>' : ''}</div>
+            <div class="member-list">${members}${isMine ? ` <span style="color: ${hex};">• YOUR SQUAD</span>` : ''}</div>
             ${canPressCaught ? `
               <button class="btn btn-red" style="padding: 10px; font-size: 0.85rem; min-height: 48px;" onclick="claimCaught('${team.id}')">
                 🎯 CAUGHT THIS TEAM
@@ -2882,7 +3245,7 @@
         <h4 style="color:var(--scary-red); margin-bottom: 8px;">PENDING CATCH APPROVALS</h4>
         ${pendingTeams.map(team => `
           <div style="background:#120404; padding:12px; border-radius:12px; margin-bottom:10px; border:2px solid var(--scary-red); box-shadow: inset 0 1px 0 rgba(255,60,40,.2);">
-            <div style="font-weight:700; color:var(--amber);">${esc(team.name)}</div>
+            <div style="font-weight:700; color:var(--amber);"><span class="sq-dot" style="background: ${teamColor(team)}; color: ${teamColor(team)};"></span>${esc(team.name)}</div>
             ${team.claimedBy ? `<div style="font-size:0.8rem; color:var(--text-muted);">Claimed by ${esc(team.claimedBy)}</div>` : ''}
             <button class="btn btn-red" style="padding:8px; margin-top:6px; font-size:0.8rem; min-height:48px;" onclick="approveCatch('${team.id}')">
               APPROVE CATCH & TURN TO HUNTERS
@@ -2977,6 +3340,8 @@
       localStorage.removeItem('chipset_session');
       localStorage.setItem('chipset_kicked', '1');
       localPlayer = null;
+      setSquadTheme(null);
+      el('squadBeacon').classList.add('hidden');
       el('stepKicked').classList.remove('hidden');
       renderGate();
     }
