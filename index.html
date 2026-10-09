@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>CHiPSET — NIGHT HUNT</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-15 0 150 150' width='150' height='150'><rect x='-10' y='-10' width='140' height='170' fill='%23030202'/><g fill='none' stroke='%23FFB000' stroke-linecap='round' stroke-linejoin='round'><path stroke-width='8' d='M60 18 C36 18 18 36 18 58 C18 73 27 83 35 93 C40 99 41 104 41 110 L79 110 C79 104 80 99 85 93 C93 83 102 73 102 58 C102 36 84 18 60 18Z'/><path stroke-width='6' d='M60 110 V88 M60 88 L47 76 V56 M60 88 L74 74 V50 M60 98 L52 90 M47 76 L40 68'/><path stroke-width='7' d='M45 118 H75 M47 128 H73 M52 138 H68'/><path stroke-width='7' d='M60 2 V10 M20 14 L25 22 M100 14 L95 22 M4 44 L12 47 M116 44 L108 47 M8 78 L16 74 M112 78 L104 74'/></g><g fill='%23FFB000'><circle cx='47' cy='52' r='6'/><circle cx='74' cy='46' r='5'/><circle cx='40' cy='66' r='4'/><circle cx='82' cy='72' r='5'/><circle cx='60' cy='88' r='3'/></g></svg>">
+  <meta name="theme-color" content="#030202">
   <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -803,6 +805,32 @@
     }
     .grp-row .btn { margin-top: 8px; min-height: 42px; font-size: .8rem; }
 
+    /* Live presence lights: green = online, yellow = away (app in background), black = offline/closed */
+    .pl-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+      border: 2px solid transparent;
+      flex-shrink: 0;
+    }
+    .pl-dot.g { background: #29d46a; border-color: #b9ffd2; box-shadow: 0 0 8px #29d46a; }
+    .pl-dot.y { background: #ffd400; border-color: #fff3a0; box-shadow: 0 0 8px #ffd400; }
+    .pl-dot.k { background: #000; border-color: #7a7a7a; }
+    .pl-legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: .75rem;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin: -6px 0 14px;
+    }
+    .pl-legend .pl-dot { margin-right: 5px; }
+
     @keyframes beaconpulse {
       0%,100% { box-shadow: 0 0 14px var(--squad-glow), 0 8px 24px rgba(0,0,0,.55); }
       50% { box-shadow: 0 0 44px var(--squad), 0 8px 24px rgba(0,0,0,.55); }
@@ -1114,6 +1142,11 @@
           <h3 style="font-size: 28px; color: var(--chipset-orange);">GAME STATUS</h3>
           <span id="playerCountBadge" style="font-size: 0.8rem; color: var(--text-muted);">0 Players</span>
         </div>
+        <div id="presenceLegend" class="pl-legend hidden">
+          <span><span class="pl-dot g"></span>ONLINE</span>
+          <span><span class="pl-dot y"></span>AWAY</span>
+          <span><span class="pl-dot k"></span>OFFLINE</span>
+        </div>
 
         <div id="lobbyView" style="color: var(--text-muted); font-size: 0.9rem;">
           <div style="font-size: 0.8rem; letter-spacing: 2px; color: var(--hot);">LOBBY • PLAYERS</div>
@@ -1336,6 +1369,14 @@
     let finalizing = false;
     let lastFinalizeTry = 0;
     let tagModalOpen = false;
+
+    // ---------- Live presence (who is online / away / offline) ----------
+    // Uses Supabase Realtime Presence: no database writes, and a closed tab or browser drops off automatically.
+    const PRESENCE_KEY = 'c_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    let presenceChannel = null;
+    let presenceReady = false;
+    let presenceMap = {};
+    let presenceSent = '';
 
     // ==========================================
     // HELPERS
@@ -1577,6 +1618,64 @@
     }
 
     // ==========================================
+    // PLAYER PRESENCE LIGHTS
+    // ==========================================
+    function rebuildPresence() {
+      const map = {};
+      try {
+        const st = presenceChannel.presenceState();
+        Object.keys(st).forEach(k => (st[k] || []).forEach(meta => {
+          if (!meta || !meta.name) return;
+          const key = String(meta.name).toLowerCase();
+          if (meta.vis) map[key] = 'on';
+          else if (!map[key]) map[key] = 'away';
+        }));
+      } catch (e) {}
+      presenceMap = map;
+    }
+
+    function presenceStatus(name) {
+      return presenceMap[String(name).toLowerCase()] || 'off';
+    }
+
+    // Green = app open and visible, yellow = app open but in the background / screen off, black = gone
+    function lightHTML(name) {
+      if (!presenceReady) return '';
+      const s = presenceStatus(name);
+      const cls = s === 'on' ? 'g' : s === 'away' ? 'y' : 'k';
+      const tip = s === 'on' ? 'Online' : s === 'away' ? 'Away (app in background)' : 'Offline (tab or browser closed)';
+      return `<span class="pl-dot ${cls}" title="${tip}"></span>`;
+    }
+
+    async function syncPresence() {
+      if (!presenceChannel || !presenceReady) return;
+      const p = (localPlayer && !localPlayer.isSupervisor) ? localPlayer : null;
+      const vis = document.visibilityState === 'visible';
+      const sig = p ? (p.name + '|' + (vis ? 1 : 0)) : '';
+      if (sig === presenceSent) return;
+      presenceSent = sig;
+      try {
+        if (p) await presenceChannel.track({ name: p.name, vis });
+        else await presenceChannel.untrack();
+      } catch (e) { presenceSent = ''; }
+    }
+
+    function initPresence() {
+      try {
+        presenceChannel = supabaseClient.channel('nighthunt_presence', { config: { presence: { key: PRESENCE_KEY } } });
+        presenceChannel
+          .on('presence', { event: 'sync' }, () => { rebuildPresence(); updateUI(); })
+          .subscribe(status => {
+            presenceReady = (status === 'SUBSCRIBED');
+            if (!presenceReady) presenceMap = {};
+            presenceSent = '';
+            if (presenceReady) syncPresence();
+            updateUI();
+          });
+      } catch (e) { presenceReady = false; }
+    }
+
+    // ==========================================
     // CONNECTION INDICATOR
     // ==========================================
     function renderConn() {
@@ -1659,6 +1758,7 @@
           updateSoundPill();
         }
       });
+      document.addEventListener('visibilitychange', syncPresence); // green <-> yellow
       window.addEventListener('online', () => { renderConn(); pollState(); });
       window.addEventListener('offline', renderConn);
 
@@ -1684,6 +1784,8 @@
           renderConn();
           if (status === 'SUBSCRIBED') pollState();
         });
+
+      initPresence();
 
       renderConn();
       updateSoundPill();
@@ -2146,11 +2248,25 @@
       const res = await mutate(s => {
         const t = s.teams.find(x => x.id === teamId);
         if (!t || s.status !== 'HIDING' || t.status !== 'HIDING' || t.hidden || t.retired) return false;
-        t.hidden = true;
+        t.hidden = true; // one member's tap marks the WHOLE squad as hidden
         t.hiddenAt = Date.now();
+        t.hiddenBy = localPlayer ? localPlayer.name : null;
         return true;
       });
-      if (res === 'ok') showNotice('✅ Squad marked as hidden — hold your position!');
+      if (res === 'ok') showNotice('✅ Whole squad marked as hidden — hold your position!');
+    }
+
+    // Any member can take it back while the hiding timer is still running
+    async function markNotHidden(teamId) {
+      const res = await mutate(s => {
+        const t = s.teams.find(x => x.id === teamId);
+        if (!t || s.status !== 'HIDING' || t.status !== 'HIDING' || !t.hidden || t.retired) return false;
+        t.hidden = false;
+        delete t.hiddenAt;
+        delete t.hiddenBy;
+        return true;
+      });
+      if (res === 'ok') showNotice('Squad is no longer marked hidden');
     }
 
     // Leave Game: confirm, disconnect, decrement squad count, retire squad if it is now empty
@@ -2313,7 +2429,7 @@
 
       const seekerCount = n >= 4 ? 3 : n - 1;
       const hiderCount = n - seekerCount;
-      const teamCount = Math.max(1, Math.ceil(hiderCount / TEAM_SIZE));
+      const teamCount = Math.max(1, Math.floor(hiderCount / TEAM_SIZE));
 
       // Under-capacity override (guarded by explicit confirmation)
       const issues = [];
@@ -2347,9 +2463,10 @@
           if (b26.length > 0) mixedHiders.push(b26.pop());
         }
 
-        // Dynamic team scaling + balanced distribution (sizes differ by at most 1)
+        // Squads of 3; leftover hiders are absorbed into some squads (making them 4) instead of
+        // forming tiny squads of 1-2. Sizes differ by at most 1.
         const total = mixedHiders.length;
-        const tCount = Math.max(1, Math.ceil(total / TEAM_SIZE));
+        const tCount = Math.max(1, Math.floor(total / TEAM_SIZE));
         const base = Math.floor(total / tCount);
         const extra = total % tCount;
 
@@ -2698,7 +2815,7 @@
 
       const lobbyList = el('lobbyPlayerList');
       lobbyList.innerHTML = state.players.map(p =>
-        `<span class="badge-batch">${esc(p.name)} ${getVIPBadgeHTML(p.name)} (${esc(p.batch)})</span>`
+        `<span class="badge-batch">${lightHTML(p.name)}${esc(p.name)} ${getVIPBadgeHTML(p.name)} (${esc(p.batch)})</span>`
       ).join('');
 
       el('playerCountBadge').innerText = `${state.players.length} Players`;
@@ -2707,7 +2824,7 @@
       if (state.seekers.length === 0 || state.status === 'REVEAL_COUNTDOWN') {
         hunterBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">ROLES HIDDEN</span>`;
       } else {
-        hunterBox.innerHTML = getHunterNames().map(name => `<span class="hunter-pill">💀 ${esc(name)} ${getVIPBadgeHTML(name)}</span>`).join('');
+        hunterBox.innerHTML = getHunterNames().map(name => `<span class="hunter-pill">${lightHTML(name)}💀 ${esc(name)} ${getVIPBadgeHTML(name)}</span>`).join('');
       }
 
       if (state.status === 'LOBBY') {
@@ -2742,6 +2859,9 @@
       }
 
       if (getGameResult() && !state.gameEndedAt) maybeFinalizeGame();
+
+      el('presenceLegend').classList.toggle('hidden', !presenceReady);
+      syncPresence();
 
       lastSig = uiSig();
     }
@@ -2783,7 +2903,7 @@
         const ok = grouped.some(n => sameName(n, m.name));
         const you = sameName(m.name, localPlayer.name);
         const mark = state.status === 'MEETUP' ? (ok ? '✓ ' : '… ') : '';
-        return `<span class="beacon-pill ${state.status === 'MEETUP' && ok ? 'ok' : ''}">${mark}${esc(m.name)}${you ? ' (YOU)' : ''}</span>`;
+        return `<span class="beacon-pill ${state.status === 'MEETUP' && ok ? 'ok' : ''}">${lightHTML(m.name)}${mark}${esc(m.name)}${you ? ' (YOU)' : ''}</span>`;
       }).join('');
 
       let label = 'YOUR SQUAD COLOR';
@@ -3037,7 +3157,7 @@
           : `GROUPED: ${g}/${a.length} squads — hiding starts when all are ready (or timer ends)`;
         el('groupWaitList').innerHTML = a.filter(t => !t.grouped).map(t => {
           const done = Array.isArray(t.groupedUp) ? t.groupedUp : [];
-          const missing = t.members.filter(m => !done.some(n => sameName(n, m.name))).map(m => esc(m.name)).join(', ');
+          const missing = t.members.filter(m => !done.some(n => sameName(n, m.name))).map(m => lightHTML(m.name) + esc(m.name)).join(', ');
           const hex = teamColor(t);
           return `
             <div class="grp-row" style="border-color: ${hex};">
@@ -3061,6 +3181,7 @@
         info.innerText = all ? '✅ ALL SQUADS HIDDEN — hunt can begin now' : `HIDDEN: ${hid}/${a.length} squads — waiting for the rest`;
         btn.disabled = !all;
         btn.classList.toggle('btn-ready', all);
+        if (!all) localAlertsShown.allHiddenNotified = false; // re-notify if squads re-hide
         if (all && !localAlertsShown.allHiddenNotified) {
           localAlertsShown.allHiddenNotified = true;
           showNotice('✅ All squads hidden — you can begin the hunt early');
@@ -3191,7 +3312,7 @@
         const members = team.members.length
           ? team.members.map(m => {
               const mark = (state.status === 'MEETUP' && grouped.some(n => sameName(n, m.name))) ? '✓ ' : '';
-              return `${mark}${esc(m.name)} ${getVIPBadgeHTML(m.name)}`;
+              return `<span style="white-space: nowrap;">${lightHTML(m.name)}${mark}${esc(m.name)} ${getVIPBadgeHTML(m.name)}</span>`;
             }).join(', ')
           : 'All members left';
 
@@ -3224,7 +3345,10 @@
               </button>
             ` : ''}
             ${(isMine && team.hidden && state.status === 'HIDING' && team.status === 'HIDING') ? `
-              <div style="color: #3dff86; font-size: 0.9rem; letter-spacing: 1.5px;">SQUAD HIDDEN — HOLD YOUR POSITION</div>
+              <div style="color: #3dff86; font-size: 0.9rem; letter-spacing: 1.5px;">SQUAD HIDDEN${team.hiddenBy ? ` (MARKED BY ${esc(team.hiddenBy.toUpperCase())})` : ''} — HOLD YOUR POSITION</div>
+              <button class="btn btn-dark" style="padding: 10px; font-size: 0.85rem; min-height: 46px; margin-top: 10px;" onclick="markNotHidden('${team.id}')">
+                ↩ NOT HIDDEN YET
+              </button>
             ` : ''}
           </div>
         `;
@@ -3291,7 +3415,7 @@
       list.innerHTML = kickable.map(p => `
         <button class="btn btn-dark" style="margin-top: 0; min-height: 50px; font-size: 0.95rem; justify-content: space-between; padding: 10px 16px;"
           onclick="selectKickTarget('${p.id}', '${esc(p.name)}')">
-          <span>${esc(p.name)} <span style="font-size:0.78rem; color: var(--text-muted);">(${esc(p.batch)})</span></span>
+          <span>${lightHTML(p.name)}${esc(p.name)} <span style="font-size:0.78rem; color: var(--text-muted);">(${esc(p.batch)})</span></span>
           <span style="color: var(--blood); font-size: 1.1rem;">✕</span>
         </button>
       `).join('');
