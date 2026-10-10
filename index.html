@@ -905,17 +905,6 @@
       background: linear-gradient(180deg, rgba(255,176,0,.10), rgba(255,176,0,.02));
       box-shadow: inset 0 0 22px rgba(0,0,0,.5), 0 0 18px rgba(255,122,0,.15);
     }
-    .wc-live { font-size: .7rem; letter-spacing: 3px; color: #3dff86; font-weight: 700; }
-    .wc-dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #29d46a;
-      box-shadow: 0 0 8px #29d46a;
-      margin-right: 6px;
-      animation: dotpulse 1.6s infinite;
-    }
     .wc-num {
       font-family: var(--display);
       font-size: 72px;
@@ -944,9 +933,8 @@
     .lobby-monitor.lm-off .wc-num { color: var(--amber-dim); -webkit-text-stroke-color: var(--amber-dim); text-shadow: none; }
     .lobby-monitor .wc-num.up { color: #b9ffd2; }
     .lobby-monitor .wc-num.down { color: #ff7a5a; }
-    .lm-detail { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 10px; font-size: .75rem; letter-spacing: 1.8px; color: var(--amber); }
     @keyframes wcpop { 0% { transform: scale(1.35); filter: brightness(1.6); } 100% { transform: scale(1); filter: none; } }
-    @media (prefers-reduced-motion: reduce) { .wc-num.pop, .wc-dot { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .wc-num.pop { animation: none; } }
 
     /* Live presence lights: green = online, yellow = away (app in background), black = offline/closed */
     .pl-dot {
@@ -1108,9 +1096,8 @@
         This screen unlocks by itself.
       </p>
       <div class="wait-count" aria-live="polite">
-        <div class="wc-live"><span class="wc-dot"></span>LIVE</div>
         <div id="waitCountNum" class="wc-num">…</div>
-        <div id="waitCountSub" class="wc-sub">CONNECTING TO THE LOBBY</div>
+        <div id="waitCountSub" class="wc-sub">CONNECTING</div>
       </div>
       <div class="form-group" style="text-align: left;">
         <label>Supervisor Passcode</label>
@@ -1175,10 +1162,8 @@
           <span class="status-badge status-hiding">ADMIN</span>
         </div>
         <div id="lobbyMonitor" class="lobby-monitor">
-          <div class="wc-live"><span class="wc-dot"></span>LIVE LOBBY MONITOR</div>
           <div id="lmNum" class="wc-num">…</div>
-          <div id="lmSub" class="wc-sub">CONNECTING TO THE LOBBY FEED</div>
-          <div id="lmDetail" class="lm-detail"></div>
+          <div id="lmSub" class="wc-sub">CONNECTING</div>
         </div>
         <div class="admin-note">Passcode Verified • Supervisor Access Granted • Not part of any team</div>
         <div id="adminMatchTime" class="admin-note" style="color: var(--amber); font-size: 1.1rem; letter-spacing: 2px;"></div>
@@ -1560,8 +1545,6 @@
     let presenceReady = false;
     let presenceMap = {};
     let presenceWaiting = 0;
-    let presenceWaitingAway = 0;
-    let presenceWaitingPeak = 0;
     // One stable id per browser, so two tabs on the same phone are counted as one person in the lobby
     const DEVICE_ID = (() => {
       try {
@@ -1816,7 +1799,7 @@
     // ==========================================
     function rebuildPresence() {
       const map = {};
-      const waiters = new Map(); // device -> is at least one of its tabs visible?
+      const waiters = new Set(); // one entry per device
       try {
         const st = presenceChannel.presenceState();
         Object.keys(st).forEach(k => (st[k] || []).forEach(meta => {
@@ -1824,10 +1807,7 @@
           // Everyone in the lobby: on the "game not started" screen OR on the sign-up form, not yet registered.
           // De-duplicated per device, so two tabs on one phone count once. A closed tab / lost connection
           // leaves presence automatically.
-          if (meta.wait) {
-            const d = meta.dev || k;
-            waiters.set(d, !!(waiters.get(d) || meta.vis));
-          }
+          if (meta.wait) waiters.add(meta.dev || k);
           if (!meta.name) return;
           const key = String(meta.name).toLowerCase();
           if (meta.vis) map[key] = 'on';
@@ -1836,8 +1816,6 @@
       } catch (e) {}
       presenceMap = map;
       presenceWaiting = waiters.size;
-      presenceWaitingAway = [...waiters.values()].filter(v => !v).length;
-      if (presenceWaiting > presenceWaitingPeak) presenceWaitingPeak = presenceWaiting;
     }
 
     // ---------- Live lobby counter ("souls waiting") ----------
@@ -1849,7 +1827,7 @@
       let text;
       if (!presenceReady) {
         text = '…';
-        sub.innerText = 'CONNECTING TO THE LOBBY';
+        sub.innerText = 'CONNECTING';
       } else {
         // You are on this screen, so you are always at least 1 (your own entry may take a moment to echo back)
         const onWait = !el('stepWaiting').classList.contains('hidden');
@@ -1876,23 +1854,16 @@
       let text, dir = 0;
       if (!presenceReady) {
         text = '…';
-        el('lmSub').innerText = 'CONNECTING TO THE LOBBY FEED';
-        el('lmDetail').innerText = '';
+        el('lmSub').innerText = 'CONNECTING';
         box.classList.add('lm-off');
       } else {
         box.classList.remove('lm-off');
         const n = presenceWaiting;
-        const away = presenceWaitingAway;
         text = String(n);
         if (lastMonitorShown !== null && /^\d+$/.test(lastMonitorShown)) dir = Math.sign(n - Number(lastMonitorShown));
         el('lmSub').innerText = open
-          ? (n === 1 ? 'PERSON IN THE LOBBY (REGISTRATION OPEN)' : 'PEOPLE IN THE LOBBY (REGISTRATION OPEN)')
+          ? (n === 1 ? 'PERSON IN THE LOBBY' : 'PEOPLE IN THE LOBBY')
           : (n === 1 ? 'PERSON WAITING FOR REGISTRATION' : 'PEOPLE WAITING FOR REGISTRATION');
-        el('lmDetail').innerHTML =
-          `<span><span class="pl-dot g"></span>${n - away} ACTIVE</span>` +
-          `<span><span class="pl-dot y"></span>${away} AWAY</span>` +
-          `<span>PEAK ${presenceWaitingPeak}</span>` +
-          `<span>✅ ${state.players.length} REGISTERED</span>`;
       }
       if (text !== lastMonitorShown) {
         lastMonitorShown = text;
@@ -2026,6 +1997,9 @@
     }
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // Unique per player even if 50 people sign up in the same millisecond
+    function newPlayerId() { return 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
 
     // Fetch the game state with exponential backoff + jitter, so a traffic spike turns into a short queue
     // instead of a wall of failed requests.
@@ -2479,7 +2453,7 @@
       }
 
       await refreshState();
-      const player = { id: 'p_' + Date.now(), name, batch, epoch: state.epoch || 0 };
+      const player = { id: newPlayerId(), name, batch, epoch: state.epoch || 0 };
 
       if (asSupervisor) {
         // Supervisors bypass the roster entirely — never added to players, squads or hunter pools.
@@ -2492,17 +2466,20 @@
         if (joinBtn) { joinBtn.disabled = true; joinBtn.innerText = 'JOINING…'; }
         let closed = false;
         let joined = false;
+        let blocked = false;
         for (let attempt = 1; attempt <= JOIN_ATTEMPTS && !joined; attempt++) {
           const res = await mutate(s => {
             player.epoch = s.epoch || 0;
             if (!s.registrationOpen) { closed = true; return false; }
+            // Only a live kick in THIS game blocks a sign-up (needs supervisor approval to come back)
+            if (kickedByName(s, name)) { blocked = true; return false; }
             if (!s.players.some(p => sameName(p.name, name))) {
               s.players.push(player);
               return true;
             }
             return false;
           });
-          if (closed) break;
+          if (closed || blocked) break;
           if (res !== 'err') {
             await sleep(250 + Math.random() * 500);          // let any competing writes land
             await refreshState();
@@ -2516,6 +2493,10 @@
         if (closed) {
           alert("The game hasn't started yet — please wait for the supervisor.");
           renderGate();
+          return;
+        }
+        if (blocked) {
+          showKickedScreen(name, batch);
           return;
         }
         if (!joined) {
@@ -2982,6 +2963,9 @@
           s.huntStartedAt = null;
           s.gameEndedAt = null;
           s.registrationOpen = false; // back to the locked default
+          s.kicked = [];          // a reset wipes every kick and rejoin request, so nothing carries into the next game
+          s.kickedNames = [];
+          s.rejoinRequests = [];
           s.phaseVersion = (s.phaseVersion || 0) + 1;
           s.epoch = (s.epoch || 0) + 1;
           return true;
@@ -3257,6 +3241,7 @@
 
       checkIfKicked();
       checkRejoinApproved();
+      releaseStaleKick();
 
       if (localPlayer) {
         checkReveal();
@@ -3538,8 +3523,7 @@
       renderLobbyMonitor();
       const regBtn = el('regToggleBtn');
       const open = !!state.registrationOpen;
-      regBtn.innerText = open ? '🔒 CLOSE REGISTRATION'
-        : (presenceReady ? `🔓 OPEN REGISTRATION (${presenceWaiting} WAITING)` : '🔓 OPEN REGISTRATION');
+      regBtn.innerText = open ? '🔒 CLOSE REGISTRATION' : '🔓 OPEN REGISTRATION';
       regBtn.className = 'btn ' + (open ? 'btn-red' : 'btn-green');
       el('regStatusText').innerText = open
         ? 'REGISTRATION IS OPEN — players can join now'
@@ -3849,9 +3833,11 @@
         const idx = s.players.findIndex(p => p.id === id);
         if (idx === -1) return false;
 
-        // Track kicked players by name so their device detects it
-        if (!Array.isArray(s.kickedNames)) s.kickedNames = [];
-        if (!s.kickedNames.some(n => sameName(n, name))) s.kickedNames.push(name);
+        // Record the kick against this exact player (id) in the CURRENT game only, so their device can detect it.
+        // (The old name-only list `kickedNames` is no longer read — it never expired and caused false kicks.)
+        if (!Array.isArray(s.kicked)) s.kicked = [];
+        s.kicked = s.kicked.filter(k => k.id !== id);
+        s.kicked.push({ id, name, epoch: s.epoch || 0, at: Date.now() });
 
         // Remove from roster, hunters and squads — squads left empty are retired (never spliced out mid-game)
         removePlayerFromGame(s, name);
@@ -3865,18 +3851,53 @@
       }
     }
 
-    function checkIfKicked() {
-      if (!localPlayer || localPlayer.isSupervisor) return;
-      const kicked = Array.isArray(state.kickedNames) && state.kickedNames.some(n => sameName(n, localPlayer.name));
-      if (!kicked) return;
-      // Show kicked screen
+    // A kick only counts if it belongs to the current game (epoch) and is recent. Anything older is ignored,
+    // so a stale entry from an earlier game / test run can never kick anybody.
+    const KICK_TTL_MS = 12 * 60 * 60 * 1000;
+    function kickIsLive(s, k) {
+      return !!k && k.epoch === (s.epoch || 0) && Date.now() - (k.at || 0) < KICK_TTL_MS;
+    }
+    function kickedById(s, id) {
+      return Array.isArray(s.kicked) && s.kicked.some(k => kickIsLive(s, k) && k.id === id);
+    }
+    function kickedByName(s, name) {
+      return Array.isArray(s.kicked) && s.kicked.some(k => kickIsLive(s, k) && sameName(k.name, name));
+    }
+
+    let kickedName = null;       // who the kicked screen is for
+    let kickedAtEpoch = null;    // which game that kick belongs to
+
+    function showKickedScreen(name, batch) {
+      kickedName = name || null;
+      kickedAtEpoch = state.epoch || 0;
+      if (name) el('rejoinName').value = name;
+      if (batch) el('rejoinBatch').value = batch;
       localStorage.removeItem('chipset_player');
       localStorage.removeItem('chipset_session');
-      localStorage.setItem('chipset_kicked', '1');
       localPlayer = null;
       setSquadTheme(null);
       el('squadBeacon').classList.add('hidden');
       el('stepKicked').classList.remove('hidden');
+      renderGate();
+    }
+
+    function checkIfKicked() {
+      if (!localPlayer || localPlayer.isSupervisor) return;
+      // Match on this device's own player id — never on the name alone
+      if (!kickedById(state, localPlayer.id)) return;
+      showKickedScreen(localPlayer.name, localPlayer.batch);
+    }
+
+    // The kicked screen must never get stuck: leave it as soon as the kick no longer applies
+    // (game was reset, kick expired, or the supervisor removed it).
+    function releaseStaleKick() {
+      if (el('stepKicked').classList.contains('hidden')) return;
+      const stale = (state.epoch || 0) !== kickedAtEpoch || !kickedName || !kickedByName(state, kickedName);
+      if (!stale) return;
+      localStorage.removeItem('chipset_rejoin_name');
+      localStorage.removeItem('chipset_rejoin_batch');
+      kickedName = null;
+      el('stepKicked').classList.add('hidden');
       renderGate();
     }
 
@@ -3917,11 +3938,11 @@
         const rj = s.rejoinRequests.find(r => r.id === rjId);
         if (!rj || rj.status !== 'PENDING') return false;
         rj.status = 'APPROVED';
-        // Remove from kicked list
-        if (Array.isArray(s.kickedNames)) s.kickedNames = s.kickedNames.filter(n => !sameName(n, rj.name));
+        // Lift the kick
+        if (Array.isArray(s.kicked)) s.kicked = s.kicked.filter(k => !sameName(k.name, rj.name));
         // Add back to players
         if (!s.players.some(p => sameName(p.name, rj.name))) {
-          s.players.push({ id: 'p_' + Date.now(), name: rj.name, batch: rj.batch, epoch: s.epoch || 0 });
+          s.players.push({ id: newPlayerId(), name: rj.name, batch: rj.batch, epoch: s.epoch || 0 });
         }
         return true;
       });
@@ -3950,7 +3971,7 @@
           if (p) {
             localPlayer = { ...p, epoch: state.epoch || 0 };
             localStorage.setItem('chipset_player', JSON.stringify(localPlayer));
-            localStorage.removeItem('chipset_kicked');
+            kickedName = null;
             localStorage.removeItem('chipset_rejoin_name');
             localStorage.removeItem('chipset_rejoin_batch');
             el('stepKicked').classList.add('hidden');
