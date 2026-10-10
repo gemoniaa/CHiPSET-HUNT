@@ -928,6 +928,23 @@
     }
     .wc-num.pop { animation: wcpop .45s ease-out; }
     .wc-sub { font-size: .8rem; letter-spacing: 3px; color: var(--text-muted); }
+
+    /* Supervisor lobby monitor */
+    .lobby-monitor {
+      margin: 10px 0 12px;
+      padding: 14px 10px 12px;
+      text-align: center;
+      border: 3px solid #29d46a;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(41,212,106,.12), rgba(41,212,106,.02));
+      box-shadow: inset 0 0 22px rgba(0,0,0,.5), 0 0 22px rgba(41,212,106,.22);
+    }
+    .lobby-monitor.lm-off { border-color: var(--amber-dim); box-shadow: inset 0 0 22px rgba(0,0,0,.5); }
+    .lobby-monitor .wc-num { font-size: 88px; color: #3dff86; -webkit-text-stroke-color: #3dff86; text-shadow: 0 0 18px rgba(41,212,106,.8), 0 0 40px rgba(41,212,106,.45); }
+    .lobby-monitor.lm-off .wc-num { color: var(--amber-dim); -webkit-text-stroke-color: var(--amber-dim); text-shadow: none; }
+    .lobby-monitor .wc-num.up { color: #b9ffd2; }
+    .lobby-monitor .wc-num.down { color: #ff7a5a; }
+    .lm-detail { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 10px; font-size: .75rem; letter-spacing: 1.8px; color: var(--amber); }
     @keyframes wcpop { 0% { transform: scale(1.35); filter: brightness(1.6); } 100% { transform: scale(1); filter: none; } }
     @media (prefers-reduced-motion: reduce) { .wc-num.pop, .wc-dot { animation: none; } }
 
@@ -1151,44 +1168,23 @@
 
     <!-- STEP 2: MAIN LIVE GAME DASHBOARD -->
     <main id="stepDashboard" class="hidden">
-      <!-- USER PROFILE CARD -->
-      <div id="userProfileCard" class="card" style="border-color: var(--amber); background: linear-gradient(180deg, rgba(255,176,0,.14), #0e0802);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px dashed var(--amber-dim); padding-bottom: 8px;">
-          <h3 style="font-size: 26px; color: var(--chipset-orange);">YOUR PROFILE</h3>
-          <span id="userRoleBadge" class="status-badge status-pending">LOBBY</span>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 1rem; text-align: left;">
-          <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">PLAYER NAME</span>
-            <strong id="userNameDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
-          </div>
-          <div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">BATCH</span>
-            <strong id="userBatchDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
-          </div>
-          <div style="grid-column: span 2;">
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">YOUR TEAM</span>
-            <strong id="userTeamDisplay" style="color: var(--hot); font-size: 1.2rem;">WAITING FOR TEAM</strong>
-          </div>
-        </div>
-        <button id="leaveBtn" class="btn btn-dark" onclick="leaveGame()" style="min-height: 52px; font-size: 16px; margin-top: 14px;">🚪 LEAVE GAME</button>
-      </div>
-
-      <!-- SQUAD COLOR BEACON + GROUP-UP CHECKPOINT (hiders only) -->
-      <div id="squadBeacon" class="card squad-beacon hidden"></div>
-
       <!-- PERSISTENT SUPERVISOR CONTROLS (visible only to authorized supervisors) -->
       <div id="adminPanel" class="card admin-panel hidden">
         <div class="admin-head">
           <h3 style="font-size: 26px; color: var(--chipset-orange);">SUPERVISOR CONTROLS</h3>
           <span class="status-badge status-hiding">ADMIN</span>
         </div>
+        <div id="lobbyMonitor" class="lobby-monitor">
+          <div class="wc-live"><span class="wc-dot"></span>LIVE LOBBY MONITOR</div>
+          <div id="lmNum" class="wc-num">…</div>
+          <div id="lmSub" class="wc-sub">CONNECTING TO THE LOBBY FEED</div>
+          <div id="lmDetail" class="lm-detail"></div>
+        </div>
         <div class="admin-note">Passcode Verified • Supervisor Access Granted • Not part of any team</div>
         <div id="adminMatchTime" class="admin-note" style="color: var(--amber); font-size: 1.1rem; letter-spacing: 2px;"></div>
 
         <div class="admin-label">REGISTRATION</div>
         <div id="regStatusText" class="admin-note" style="margin-top: 6px;"></div>
-        <div id="adminWaitCount" class="admin-note" style="margin-top: 4px; color: var(--amber); font-size: 1rem; letter-spacing: 2px;"></div>
         <button id="regToggleBtn" class="btn btn-green" onclick="toggleRegistration()" style="margin-top: 6px;">🔓 OPEN REGISTRATION</button>
 
         <button class="btn btn-orange" onclick="startNewGame()" style="margin-top: 18px; margin-bottom: 4px;">
@@ -1257,6 +1253,32 @@
           🔒 LOCK SUPERVISOR PANEL
         </button>
       </div>
+
+      <!-- USER PROFILE CARD -->
+      <div id="userProfileCard" class="card" style="border-color: var(--amber); background: linear-gradient(180deg, rgba(255,176,0,.14), #0e0802);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px dashed var(--amber-dim); padding-bottom: 8px;">
+          <h3 style="font-size: 26px; color: var(--chipset-orange);">YOUR PROFILE</h3>
+          <span id="userRoleBadge" class="status-badge status-pending">LOBBY</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 1rem; text-align: left;">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">PLAYER NAME</span>
+            <strong id="userNameDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">BATCH</span>
+            <strong id="userBatchDisplay" style="color: var(--amber); font-size: 1.25rem;">-</strong>
+          </div>
+          <div style="grid-column: span 2;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; letter-spacing: 1.5px;">YOUR TEAM</span>
+            <strong id="userTeamDisplay" style="color: var(--hot); font-size: 1.2rem;">WAITING FOR TEAM</strong>
+          </div>
+        </div>
+        <button id="leaveBtn" class="btn btn-dark" onclick="leaveGame()" style="min-height: 52px; font-size: 16px; margin-top: 14px;">🚪 LEAVE GAME</button>
+      </div>
+
+      <!-- SQUAD COLOR BEACON + GROUP-UP CHECKPOINT (hiders only) -->
+      <div id="squadBeacon" class="card squad-beacon hidden"></div>
 
       <!-- LIVE HUNT STATUS BANNER -->
       <div id="huntBanner" class="hunt-banner">
@@ -1538,6 +1560,8 @@
     let presenceReady = false;
     let presenceMap = {};
     let presenceWaiting = 0;
+    let presenceWaitingAway = 0;
+    let presenceWaitingPeak = 0;
     // One stable id per browser, so two tabs on the same phone are counted as one person in the lobby
     const DEVICE_ID = (() => {
       try {
@@ -1792,14 +1816,18 @@
     // ==========================================
     function rebuildPresence() {
       const map = {};
-      const waiters = new Set();
+      const waiters = new Map(); // device -> is at least one of its tabs visible?
       try {
         const st = presenceChannel.presenceState();
         Object.keys(st).forEach(k => (st[k] || []).forEach(meta => {
           if (!meta) return;
-          // People sitting on the "game not started" screen. De-duplicated per device, so two tabs
-          // on one phone count once. A closed tab / lost connection leaves presence automatically.
-          if (meta.wait) waiters.add(meta.dev || k);
+          // Everyone in the lobby: on the "game not started" screen OR on the sign-up form, not yet registered.
+          // De-duplicated per device, so two tabs on one phone count once. A closed tab / lost connection
+          // leaves presence automatically.
+          if (meta.wait) {
+            const d = meta.dev || k;
+            waiters.set(d, !!(waiters.get(d) || meta.vis));
+          }
           if (!meta.name) return;
           const key = String(meta.name).toLowerCase();
           if (meta.vis) map[key] = 'on';
@@ -1808,6 +1836,8 @@
       } catch (e) {}
       presenceMap = map;
       presenceWaiting = waiters.size;
+      presenceWaitingAway = [...waiters.values()].filter(v => !v).length;
+      if (presenceWaiting > presenceWaitingPeak) presenceWaitingPeak = presenceWaiting;
     }
 
     // ---------- Live lobby counter ("souls waiting") ----------
@@ -1834,8 +1864,45 @@
         void num.offsetWidth;
         num.classList.add('pop');
       }
-      const adm = el('adminWaitCount');
-      if (adm) adm.innerText = presenceReady ? `👥 WAITING IN THE LOBBY: ${presenceWaiting}` : '';
+    }
+
+    // ---------- Supervisor lobby monitor ----------
+    let lastMonitorShown = null;
+    function renderLobbyMonitor() {
+      const num = el('lmNum');
+      if (!num) return;
+      const box = el('lobbyMonitor');
+      const open = !!state.registrationOpen;
+      let text, dir = 0;
+      if (!presenceReady) {
+        text = '…';
+        el('lmSub').innerText = 'CONNECTING TO THE LOBBY FEED';
+        el('lmDetail').innerText = '';
+        box.classList.add('lm-off');
+      } else {
+        box.classList.remove('lm-off');
+        const n = presenceWaiting;
+        const away = presenceWaitingAway;
+        text = String(n);
+        if (lastMonitorShown !== null && /^\d+$/.test(lastMonitorShown)) dir = Math.sign(n - Number(lastMonitorShown));
+        el('lmSub').innerText = open
+          ? (n === 1 ? 'PERSON IN THE LOBBY (REGISTRATION OPEN)' : 'PEOPLE IN THE LOBBY (REGISTRATION OPEN)')
+          : (n === 1 ? 'PERSON WAITING FOR REGISTRATION' : 'PEOPLE WAITING FOR REGISTRATION');
+        el('lmDetail').innerHTML =
+          `<span><span class="pl-dot g"></span>${n - away} ACTIVE</span>` +
+          `<span><span class="pl-dot y"></span>${away} AWAY</span>` +
+          `<span>PEAK ${presenceWaitingPeak}</span>` +
+          `<span>✅ ${state.players.length} REGISTERED</span>`;
+      }
+      if (text !== lastMonitorShown) {
+        lastMonitorShown = text;
+        num.innerText = text;
+        num.classList.remove('pop', 'up', 'down');
+        void num.offsetWidth;
+        num.classList.add('pop');
+        if (dir > 0) num.classList.add('up');
+        if (dir < 0) num.classList.add('down');
+      }
     }
 
     function presenceStatus(name) {
@@ -1855,8 +1922,8 @@
       if (!presenceChannel || !presenceReady || presenceLeaving) return;
       const p = (localPlayer && !localPlayer.isSupervisor) ? localPlayer : null;
       const vis = document.visibilityState === 'visible';
-      // Waiting = currently looking at the "game not started" screen (not registered, not a supervisor)
-      const waiting = !p && !el('stepWaiting').classList.contains('hidden');
+      // In the lobby = not registered, not a supervisor, looking at the "game not started" screen or the sign-up form
+      const waiting = !p && (!el('stepWaiting').classList.contains('hidden') || !el('stepRegister').classList.contains('hidden'));
       const sig = p ? ('p|' + p.name + '|' + (vis ? 1 : 0)) : waiting ? ('w|' + (vis ? 1 : 0)) : '';
       if (sig === presenceSent) return;
       presenceSent = sig;
@@ -3468,9 +3535,11 @@
       if (!isSupervisor()) return;
 
       // Registration gate controls
+      renderLobbyMonitor();
       const regBtn = el('regToggleBtn');
       const open = !!state.registrationOpen;
-      regBtn.innerText = open ? '🔒 CLOSE REGISTRATION' : '🔓 OPEN REGISTRATION';
+      regBtn.innerText = open ? '🔒 CLOSE REGISTRATION'
+        : (presenceReady ? `🔓 OPEN REGISTRATION (${presenceWaiting} WAITING)` : '🔓 OPEN REGISTRATION');
       regBtn.className = 'btn ' + (open ? 'btn-red' : 'btn-green');
       el('regStatusText').innerText = open
         ? 'REGISTRATION IS OPEN — players can join now'
