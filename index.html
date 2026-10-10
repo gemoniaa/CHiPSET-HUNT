@@ -896,6 +896,41 @@
       .ld-logo, .ld-brand { animation: none; }
     }
 
+    /* Live lobby counter */
+    .wait-count {
+      margin: 0 auto 22px;
+      padding: 14px 10px 12px;
+      border: 2px solid var(--amber-dim);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,176,0,.10), rgba(255,176,0,.02));
+      box-shadow: inset 0 0 22px rgba(0,0,0,.5), 0 0 18px rgba(255,122,0,.15);
+    }
+    .wc-live { font-size: .7rem; letter-spacing: 3px; color: #3dff86; font-weight: 700; }
+    .wc-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #29d46a;
+      box-shadow: 0 0 8px #29d46a;
+      margin-right: 6px;
+      animation: dotpulse 1.6s infinite;
+    }
+    .wc-num {
+      font-family: var(--display);
+      font-size: 72px;
+      line-height: 1;
+      color: var(--amber);
+      -webkit-text-stroke: 1.2px var(--amber);
+      paint-order: stroke fill;
+      text-shadow: 0 0 16px var(--hot), 0 0 34px rgba(255,122,0,.5);
+      margin: 4px 0 2px;
+    }
+    .wc-num.pop { animation: wcpop .45s ease-out; }
+    .wc-sub { font-size: .8rem; letter-spacing: 3px; color: var(--text-muted); }
+    @keyframes wcpop { 0% { transform: scale(1.35); filter: brightness(1.6); } 100% { transform: scale(1); filter: none; } }
+    @media (prefers-reduced-motion: reduce) { .wc-num.pop, .wc-dot { animation: none; } }
+
     /* Live presence lights: green = online, yellow = away (app in background), black = offline/closed */
     .pl-dot {
       display: inline-block;
@@ -1055,6 +1090,11 @@
         Please wait — the supervisor will let you in shortly.<br>
         This screen unlocks by itself.
       </p>
+      <div class="wait-count" aria-live="polite">
+        <div class="wc-live"><span class="wc-dot"></span>LIVE</div>
+        <div id="waitCountNum" class="wc-num">…</div>
+        <div id="waitCountSub" class="wc-sub">CONNECTING TO THE LOBBY</div>
+      </div>
       <div class="form-group" style="text-align: left;">
         <label>Supervisor Passcode</label>
         <input type="password" id="inputWaitPasscode" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Supervisors only" />
@@ -1148,6 +1188,7 @@
 
         <div class="admin-label">REGISTRATION</div>
         <div id="regStatusText" class="admin-note" style="margin-top: 6px;"></div>
+        <div id="adminWaitCount" class="admin-note" style="margin-top: 4px; color: var(--amber); font-size: 1rem; letter-spacing: 2px;"></div>
         <button id="regToggleBtn" class="btn btn-green" onclick="toggleRegistration()" style="margin-top: 6px;">🔓 OPEN REGISTRATION</button>
 
         <button class="btn btn-orange" onclick="startNewGame()" style="margin-top: 18px; margin-bottom: 4px;">
@@ -1341,7 +1382,10 @@
     const SUPABASE_URL = "https://uvqxtfwcskyyisdpuycv.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cXh0Zndjc2t5eWlzZHB1eWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODU1NjgsImV4cCI6MjEwNjk2MTU2OH0.aGfSOZiWjxo7Zfbat9F4VKeVySVjHJ75-er3smCKisE";
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Shorter realtime heartbeat so a phone that silently loses signal drops out of the lobby count sooner
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      realtime: { heartbeatIntervalMs: 10000 }
+    });
 
     // Unique, high-contrast squad colors (assigned in order). A squad is named after its color,
     // so "Crimson Red" is both what you look for in the crowd and what hunters shout.
@@ -1493,6 +1537,15 @@
     let presenceChannel = null;
     let presenceReady = false;
     let presenceMap = {};
+    let presenceWaiting = 0;
+    // One stable id per browser, so two tabs on the same phone are counted as one person in the lobby
+    const DEVICE_ID = (() => {
+      try {
+        let d = localStorage.getItem('chipset_device');
+        if (!d) { d = 'd_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('chipset_device', d); }
+        return d;
+      } catch (e) { return PRESENCE_KEY; }
+    })();
     let presenceSent = '';
 
     // ==========================================
@@ -1739,16 +1792,50 @@
     // ==========================================
     function rebuildPresence() {
       const map = {};
+      const waiters = new Set();
       try {
         const st = presenceChannel.presenceState();
         Object.keys(st).forEach(k => (st[k] || []).forEach(meta => {
-          if (!meta || !meta.name) return;
+          if (!meta) return;
+          // People sitting on the "game not started" screen. De-duplicated per device, so two tabs
+          // on one phone count once. A closed tab / lost connection leaves presence automatically.
+          if (meta.wait) waiters.add(meta.dev || k);
+          if (!meta.name) return;
           const key = String(meta.name).toLowerCase();
           if (meta.vis) map[key] = 'on';
           else if (!map[key]) map[key] = 'away';
         }));
       } catch (e) {}
       presenceMap = map;
+      presenceWaiting = waiters.size;
+    }
+
+    // ---------- Live lobby counter ("souls waiting") ----------
+    let lastWaitShown = null;
+    function renderWaitCount() {
+      const num = el('waitCountNum');
+      const sub = el('waitCountSub');
+      if (!num) return;
+      let text;
+      if (!presenceReady) {
+        text = '…';
+        sub.innerText = 'CONNECTING TO THE LOBBY';
+      } else {
+        // You are on this screen, so you are always at least 1 (your own entry may take a moment to echo back)
+        const onWait = !el('stepWaiting').classList.contains('hidden');
+        const n = Math.max(presenceWaiting, onWait ? 1 : 0);
+        text = String(n);
+        sub.innerText = n === 1 ? 'SOUL WAITING IN THE LOBBY' : 'SOULS WAITING IN THE LOBBY';
+      }
+      if (text !== lastWaitShown) {
+        lastWaitShown = text;
+        num.innerText = text;
+        num.classList.remove('pop');
+        void num.offsetWidth;
+        num.classList.add('pop');
+      }
+      const adm = el('adminWaitCount');
+      if (adm) adm.innerText = presenceReady ? `👥 WAITING IN THE LOBBY: ${presenceWaiting}` : '';
     }
 
     function presenceStatus(name) {
@@ -1765,17 +1852,35 @@
     }
 
     async function syncPresence() {
-      if (!presenceChannel || !presenceReady) return;
+      if (!presenceChannel || !presenceReady || presenceLeaving) return;
       const p = (localPlayer && !localPlayer.isSupervisor) ? localPlayer : null;
       const vis = document.visibilityState === 'visible';
-      const sig = p ? (p.name + '|' + (vis ? 1 : 0)) : '';
+      // Waiting = currently looking at the "game not started" screen (not registered, not a supervisor)
+      const waiting = !p && !el('stepWaiting').classList.contains('hidden');
+      const sig = p ? ('p|' + p.name + '|' + (vis ? 1 : 0)) : waiting ? ('w|' + (vis ? 1 : 0)) : '';
       if (sig === presenceSent) return;
       presenceSent = sig;
       try {
-        if (p) await presenceChannel.track({ name: p.name, vis });
+        if (p) await presenceChannel.track({ name: p.name, vis, dev: DEVICE_ID });
+        else if (waiting) await presenceChannel.track({ wait: true, vis, dev: DEVICE_ID });
         else await presenceChannel.untrack();
       } catch (e) { presenceSent = ''; }
     }
+
+    // Leaving the page: drop out immediately instead of waiting for the connection timeout
+    let presenceLeaving = false; // set while the page is going away so a "hidden" event can't re-register it as a ghost
+    function dropPresence() {
+      presenceLeaving = true;
+      try { if (presenceChannel && presenceReady) presenceChannel.untrack(); } catch (e) {}
+      presenceSent = '';
+    }
+    window.addEventListener('pagehide', dropPresence);
+    window.addEventListener('pageshow', () => { // page restored from the back/forward cache
+      if (!presenceLeaving) return;
+      presenceLeaving = false;
+      presenceSent = '';
+      syncPresence();
+    });
 
     function initPresence() {
       try {
@@ -3096,6 +3201,7 @@
       if (getGameResult() && !state.gameEndedAt) maybeFinalizeGame();
 
       el('presenceLegend').classList.toggle('hidden', !presenceReady);
+      renderWaitCount();
       syncPresence();
 
       lastSig = uiSig();
